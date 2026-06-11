@@ -11,13 +11,10 @@ RANDOM_SEED = 42
 
 
 def _pearson_corr(x: pd.Series, y: pd.Series) -> float:
-    # pandas corr 默认 Pearson；若方差为 0 会返回 NaN（这里正常不会）
     return float(x.corr(y, method="pearson"))
 
 def _to_markdown_table(df: pd.DataFrame) -> str:
-    """
-    Minimal markdown table renderer (avoid pandas.to_markdown dependency on tabulate).
-    """
+    """Minimal markdown table renderer (avoid pandas.to_markdown dependency on tabulate)."""
     headers = list(df.columns)
     rows = df.astype(str).values.tolist()
 
@@ -45,7 +42,7 @@ def make_ood_split(
     corr_spec: tuple[str, str] | None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict, dict, int]:
     """
-    用 N=min(|A|,|B|) 保证可以同时满足 Train 90/10 与 Test 10/90 且互斥：
+    Use N=min(|A|,|B|) to create mutually exclusive Train 90/10 and Test 10/90 splits:
       - Train: A_train=round(0.9N), B_train=N-A_train
       - Test : A_test=N-A_train,   B_test=A_train
     """
@@ -81,7 +78,6 @@ def make_ood_split(
     train_df = df_all[df_all["row_id"].isin(train_ids)].copy()
     test_df = df_all[df_all["row_id"].isin(test_ids)].copy()
 
-    # 打乱行顺序（不改变互斥性）
     train_df = train_df.sample(frac=1.0, random_state=seed).reset_index(drop=True)
     test_df = test_df.sample(frac=1.0, random_state=seed).reset_index(drop=True)
 
@@ -112,7 +108,6 @@ def make_ood_split(
 
         return row
 
-    # 构造 summary（分别基于 train/test）
     train_row = _summary(train_df)
     test_row = _summary(test_df)
     return train_df, test_df, train_row, test_row, N
@@ -120,29 +115,28 @@ def make_ood_split(
 
 def main() -> None:
     print("=" * 80)
-    print("Diamonds OOD/Causal Learning 实验数据生成")
+    print("Diamonds OOD/Causal Learning Experiment Data Generation")
     print("=" * 80)
 
-    print("\n[1] 加载数据...")
+    print("\n[1] Loading data...")
     df_raw = pd.read_csv(INPUT_FILE)
-    print(f"原始数据: {len(df_raw)} 行, {df_raw.shape[1]} 列")
-    print(f"列名: {list(df_raw.columns)}")
+    print(f"Raw data: {len(df_raw)} rows, {df_raw.shape[1]} cols")
+    print(f"Columns: {list(df_raw.columns)}")
 
     required_cols = ["carat", "cut", "color", "clarity", "depth", "table", "x", "y", "z", "price"]
     missing = [c for c in required_cols if c not in df_raw.columns]
     if missing:
         raise ValueError(f"Missing columns in {INPUT_FILE}: {missing}")
 
-    print("\n[2] 去重 (Deduplication, 必须在切分前做)...")
+    print("\n[2] Deduplication (must be done before splitting)...")
     before = len(df_raw)
     df = df_raw.drop_duplicates().reset_index(drop=True)
     removed = before - len(df)
-    print(f"去重前: {before} | 去重后: {len(df)} | 删除重复行: {removed}")
+    print(f"Before: {before} | After: {len(df)} | Removed duplicates: {removed}")
 
-    # row_id 用于严格互斥检查（防止 reset_index 导致的“假互斥”）
     df["row_id"] = np.arange(len(df), dtype=np.int64)
 
-    print("\n[3] 编码检查（来自 diamonds_mapping.csv 的序数编码约定）...")
+    print("\n[3] Encoding check (ordinal encoding convention from diamonds_mapping.csv)...")
     print(f"cut unique: {sorted(df['cut'].unique().tolist())}")
     print(f"color unique: {sorted(df['color'].unique().tolist())}")
     print(f"clarity unique: {sorted(df['clarity'].unique().tolist())}")
@@ -151,10 +145,8 @@ def main() -> None:
 
     rows = []
 
-    # -------------------------
     # Exp 1: Cut Shift
     # A: cut in {Premium(3), Ideal(4)}  <=> cut >= 3
-    # -------------------------
     print("\n" + "=" * 80)
     print("Exp 1: Cut Shift")
     print("=" * 80)
@@ -170,12 +162,10 @@ def main() -> None:
     train1.drop(columns=["row_id"]).to_csv(os.path.join(OUTPUT_DIR, "train_exp1.csv"), index=False)
     test1.drop(columns=["row_id"]).to_csv(os.path.join(OUTPUT_DIR, "test_exp1.csv"), index=False)
     rows += [r1_train, r1_test]
-    print(f"采样规模 N=min(|A|,|B|)={N1} → train/test 各 {N1} 行")
+    print(f"Sample size N=min(|A|,|B|)={N1} -> train/test each {N1} rows")
 
-    # -------------------------
     # Exp 2: Color Shift
     # A: color in {D(6),E(5),F(4)} <=> color >= 4
-    # -------------------------
     print("\n" + "=" * 80)
     print("Exp 2: Color Shift")
     print("=" * 80)
@@ -191,14 +181,12 @@ def main() -> None:
     train2.drop(columns=["row_id"]).to_csv(os.path.join(OUTPUT_DIR, "train_exp2.csv"), index=False)
     test2.drop(columns=["row_id"]).to_csv(os.path.join(OUTPUT_DIR, "test_exp2.csv"), index=False)
     rows += [r2_train, r2_test]
-    print(f"采样规模 N=min(|A|,|B|)={N2} → train/test 各 {N2} 行")
+    print(f"Sample size N=min(|A|,|B|)={N2} -> train/test each {N2} rows")
 
-    # -------------------------
     # Exp 3: Simpson's Paradox
     # median split: carat (size) and clarity (clarity_score)
     # A (spurious/negative): (small & high) OR (big & low)
     # B (causal/positive):  (small & low)  OR (big & high)
-    # -------------------------
     print("\n" + "=" * 80)
     print("Exp 3: Simpson's Paradox")
     print("=" * 80)
@@ -208,7 +196,7 @@ def main() -> None:
 
     small = df["carat"] < median_carat
     high = df["clarity"] >= median_clarity
-    exp3_a = (small & high) | ((~small) & (~high))  # A = spurious
+    exp3_a = (small & high) | ((~small) & (~high))
 
     train3, test3, r3_train, r3_test, N3 = make_ood_split(
         df,
@@ -221,17 +209,14 @@ def main() -> None:
     train3.drop(columns=["row_id"]).to_csv(os.path.join(OUTPUT_DIR, "train_exp3.csv"), index=False)
     test3.drop(columns=["row_id"]).to_csv(os.path.join(OUTPUT_DIR, "test_exp3.csv"), index=False)
     rows += [r3_train, r3_test]
-    print(f"采样规模 N=min(|A|,|B|)={N3} → train/test 各 {N3} 行")
+    print(f"Sample size N=min(|A|,|B|)={N3} -> train/test each {N3} rows")
 
-    # -------------------------
     # Verification table
-    # -------------------------
     print("\n" + "=" * 80)
-    print("验证表格 (Markdown)")
+    print("Verification Table (Markdown)")
     print("=" * 80)
 
     df_summary = pd.DataFrame(rows)
-    # 让列顺序更贴近需求
     col_order = [
         "Experiment",
         "Split",
@@ -254,66 +239,63 @@ def main() -> None:
     with open(os.path.join(OUTPUT_DIR, "verification_table.md"), "w", encoding="utf-8") as f:
         f.write(md_table + "\n")
 
-    # -------------------------
-    # Design doc
-    # -------------------------
-    design_md = f"""# Diamonds OOD / Causal Learning（Soft Shifts / Selection Bias）实验设计
+    design_md = f"""# Diamonds OOD / Causal Learning (Soft Shifts / Selection Bias) Experiment Design
 
-## 数据来源与编码
+## Data Source & Encoding
 
-- 输入文件：`{INPUT_FILE}`（已按 `diamonds_mapping.csv` 做序数编码）
+- Input: `{INPUT_FILE}` (ordinal encoded per `diamonds_mapping.csv`)
 - cut: Fair(0) < Good(1) < Very Good(2) < Premium(3) < Ideal(4)
 - color: J(0) < I(1) < H(2) < G(3) < F(4) < E(5) < D(6)
 - clarity: I1(0) < SI2(1) < SI1(2) < VS2(3) < VS1(4) < VVS2(5) < VVS1(6) < IF(7)
 
-## 去重（防止数据泄漏）
+## Deduplication (prevents data leakage)
 
-切分前去重：去重前 {before} 行 → 去重后 {len(df)} 行（删除 {removed} 行重复样本）。
+Deduplicated before splitting: {before} rows -> {len(df)} rows ({removed} duplicate rows removed).
 
-## 全局采样策略（9:1 ↔ 1:9）
+## Global Sampling Strategy (9:1 <-> 1:9)
 
-对每个实验定义 A/B 两组，然后用 **N = min(|A|, |B|)** 构造互斥切分：
+For each experiment, define A/B groups and use **N = min(|A|, |B|)** for mutually exclusive splits:
 
 - Train: 90% A + 10% B
 - Test : 10% A + 90% B
-- 严格互斥：通过 `row_id` 检查 train/test 无交集
+- Strictly mutually exclusive: verified via `row_id` that train/test have no overlap.
 
-这样 train/test 都有 N 条样本，并且 A/B 的比例按设计“强反转”。
+Both train and test have N samples each, with A/B ratios strongly reversed by design.
 
-## Exp 1：Cut Shift（单特征偏移）
+## Exp 1: Cut Shift (single-feature shift)
 
-- A（高切工）：cut ∈ {{Premium(3), Ideal(4)}}（即 cut ≥ 3）
-- B（低切工）：cut ∈ {{Fair, Good, Very Good}}（即 cut ≤ 2）
+- A (high cut): cut ∈ {{Premium(3), Ideal(4)}} (i.e., cut ≥ 3)
+- B (low cut): cut ∈ {{Fair, Good, Very Good}} (i.e., cut ≤ 2)
 
-## Exp 2：Color Shift（单特征偏移）
+## Exp 2: Color Shift (single-feature shift)
 
-- A（高色级）：color ∈ {{D(6), E(5), F(4)}}（即 color ≥ 4）
-- B（低色级）：color ∈ {{G, H, I, J}}（即 color ≤ 3）
+- A (high color): color ∈ {{D(6), E(5), F(4)}} (i.e., color ≥ 4)
+- B (low color): color ∈ {{G, H, I, J}} (i.e., color ≤ 3)
 
-## Exp 3：Simpson’s Paradox（虚假相关性反转）
+## Exp 3: Simpson's Paradox (spurious correlation reversal)
 
-使用中位数切分：
+Median split:
 
 - median(carat) = {median_carat:.4f}
 - median(clarity_score) = {median_clarity:.4f}
 
-定义：
+Groups:
 
-- A（虚假相关/简单模式）：(小克拉 且 高净度) 或 (大克拉 且 低净度)
-- B（因果机制/困难模式）：(小克拉 且 低净度) 或 (大克拉 且 高净度)
+- A (spurious/simple pattern): (small carat & high clarity) OR (big carat & low clarity)
+- B (causal/hard pattern): (small carat & low clarity) OR (big carat & high clarity)
 
-验证指标：Pearson corr(clarity_score, price) 在 Train vs Test 应出现显著差异（理想为负→正的翻转）。
+Validation metric: Pearson corr(clarity_score, price) should show significant Train vs Test difference (ideally a negative->positive flip).
 
-## 输出文件
+## Output Files
 
-输出目录：`{OUTPUT_DIR}/`
+Output directory: `{OUTPUT_DIR}/`
 
 - `train_exp1.csv`, `test_exp1.csv`
 - `train_exp2.csv`, `test_exp2.csv`
 - `train_exp3.csv`, `test_exp3.csv`
 - `verification_table.csv`, `verification_table.md`
 
-验证表格：
+Verification table:
 
 {md_table}
 """
@@ -321,7 +303,7 @@ def main() -> None:
     with open(os.path.join(OUTPUT_DIR, "EXPERIMENT_DESIGN.md"), "w", encoding="utf-8") as f:
         f.write(design_md)
 
-    print(f"\n✓ 输出目录: {OUTPUT_DIR}/ （已生成 6 个 CSV + verification_table + EXPERIMENT_DESIGN.md）")
+    print(f"\nDone. Output: {OUTPUT_DIR}/ (6 CSVs + verification_table + EXPERIMENT_DESIGN.md)")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# Diamonds OOD Shifts 训练/测试比例说明
+# Diamonds OOD Shifts Train/Test Ratio Summary
 
 | Shift  | Exp   | Train Count | Test Count | Train % | Test % |
 | :---   | :---  | :---        | :---       | :---    | :---   |

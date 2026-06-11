@@ -1,4 +1,4 @@
-"""计时脚本：测 creditcard / elevator / meps 前5 epoch 训练和推理时间"""
+"""Timing script: measure training and inference times for creditcard / elevator / meps over 5 epochs."""
 import time, json, numpy as np
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.model_selection import train_test_split
@@ -40,5 +40,5 @@ for ds in DATASETS:
         model.predict(x_te)
         infer_times.append(time.time() - t0)
 
-    print(f"平均训练/epoch: {np.mean(train_times):.4f}s")
-    print(f"平均推理: {np.mean(infer_times):.4f}s  (样本数: {len(x_te)})")
+    print(f"Avg train/epoch: {np.mean(train_times):.4f}s")
+    print(f"Avg inference: {np.mean(infer_times):.4f}s  (samples: {len(x_te)})")

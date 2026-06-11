@@ -29,24 +29,17 @@ class TabularDataset(Dataset):
             self.raw_data.set_index('projectid', inplace=True)
         else:
             col_names = [c['name'] for c in self.ds_info['meta']['columns']]
-            # 检查数据集是否有header
-            # elevator_cleaned.csv和housesale_cleaned.csv第一行是列名(y,x1,x2,...)，第一列是label，需要移动到最后一列
             if dataset_name in ['elevator', 'housesale']:
-                # elevator_cleaned.csv和housesale_cleaned.csv第一列是y（label），需要移动到最后一列
                 self.raw_data = pd.read_csv(raw_data_path, header=0)
-                # 将y列移动到最后一列
                 cols = [c for c in self.raw_data.columns if c != 'y'] + ['y']
                 self.raw_data = self.raw_data[cols]
-                # 重命名列为col_names（feature在前，TARGET在最后）
                 self.raw_data.columns = col_names
             elif dataset_name in ['creditcard']:
-                # 这些数据集有header，使用header=0并重命名列
                 self.raw_data = pd.read_csv(raw_data_path, header=0)
-                # 重命名最后一列为TARGET
                 if len(self.raw_data.columns) == len(col_names):
                     self.raw_data.columns = col_names
             else:
-            self.raw_data = pd.read_csv(raw_data_path, header=None, names=col_names)
+                self.raw_data = pd.read_csv(raw_data_path, header=None, names=col_names)
 
         if datapoint_ids is not None:
             self.raw_data = self.raw_data.loc[datapoint_ids]
@@ -67,7 +60,7 @@ class TabularDataset(Dataset):
             self.targets = torch.LongTensor(targets)
         self.raw_data = self.raw_data[[i for i in self.raw_data.columns if i != 'TARGET']]
 
-        self.columns = self.ds_info['meta']['columns'][1:]  # Omitting the target column
+        self.columns = self.ds_info['meta']['columns'][1:]
         self.cat_feat_origin_cards = None
         self.cont_feat_origin = None
         self.feature_encoders = None
@@ -80,10 +73,8 @@ class TabularDataset(Dataset):
         if self.encoders is not None:
             self.feature_encoders = {}
             for c in self.columns:
-                # 跳过TARGET列（标签列不需要编码）
                 if c['name'] == 'TARGET':
                     continue
-                # 检查列是否存在
                 if c['name'] not in self.raw_data.columns:
                     continue
                 col = self.raw_data[c['name']]
@@ -103,7 +94,6 @@ class TabularDataset(Dataset):
             self.cont_feat_origin = []
             cont_features = []
             for col_name in [c['name'] for c in self.columns]:
-                # 跳过TARGET列（标签列不需要编码，且不在raw_data中）
                 if col_name == 'TARGET' or col_name not in feature_encoders:
                     continue
                 enc = feature_encoders[col_name]

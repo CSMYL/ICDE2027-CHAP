@@ -1,63 +1,63 @@
-# LLM-CD Baseline 交接说明
+# LLM-CD Baseline
 
-这个目录实现了论文 baseline **LLM-CD**：
+This directory implements the paper baseline **LLM-CD**:
 
 > Causal Discovery through Synergizing Large Language Model and Data-Driven Reasoning
 
-目标是尽量还原原论文“数据驱动因果发现 + 大模型因果判断 + 只用目标父节点训练预测器”的流程，同时适配本项目 CHAP 数据格式和无网络服务器环境。
+It aims to faithfully reproduce the original paper's pipeline of "data-driven causal discovery + LLM causal judgment + training predictors using only target parent nodes", while adapting to this project's CHAP data format and offline server environments.
 
-核心流程：
+Core pipeline:
 
-1. 用 PC 算法从表格数据发现初始因果图。
-2. 用 LLM 判断不确定的条件独立关系、边方向和环处理。
-3. 得到最终图后，只取目标变量的直接父节点。
-4. 用这些父节点训练 MLP，并在测试集评估。
+1. Use the PC algorithm to discover an initial causal graph from tabular data.
+2. Use LLM to judge uncertain conditional independence relations, edge orientations, and cycle handling.
+3. After obtaining the final graph, extract only the direct parent nodes of the target variable.
+4. Train an MLP using these parents and evaluate on the test set.
 
-由于正式服务器可能无网络，流程被拆成三个阶段：第一阶段和第三阶段可以在无网服务器跑，只有第二阶段调用 LLM API 时需要有网。
+Since production servers may be offline, the pipeline is split into three stages: stages 1 and 3 can run offline; only stage 2 (LLM API calls) requires internet.
 
-## 5 分钟快速跑通
+## 5-Minute Quick Start
 
-先在项目根目录确认环境。Mac 本地已经用 `.venv` 跑通过；新机器可以按下面装：
+Set up the environment from the project root. Mac local has been verified with `.venv`; new machines can install:
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements-baseline.txt
 ```
 
-跑一个不调用 API 的 demo：
+Run a demo without API:
 
 ```bash
 baseline/llmcd/scripts/run_e2e.sh baseline/llmcd/configs/synthetic_demo.json
 ```
 
-输出在：
+Output at:
 
 ```text
 baseline/llmcd/runs/synthetic_demo/
 ```
 
-应该看到三个文件：
+You should see three files:
 
-- `pc_graph.json`：PC 初始图
-- `final_graph.json`：LLM 或 fallback 规则修正后的最终图
-- `metrics.json`：只用目标父节点训练 MLP 后的测试指标
+- `pc_graph.json`: initial PC graph
+- `final_graph.json`: final graph after LLM or fallback rule correction
+- `metrics.json`: test metrics after training MLP with target parent nodes only
 
-## 正式数据集配置
+## Production Dataset Configs
 
-已经准备好 6 个正式配置：
+6 production configs are ready:
 
-| 数据集 | 配置文件 | target |
+| Dataset | Config | Target |
 | --- | --- | --- |
-| Adult | `baseline/llmcd/configs/adult.json` | `income`，第 14 列 |
-| Cardio | `baseline/llmcd/configs/cardio.json` | `cardio`，第 11 列 |
-| CreditCard | `baseline/llmcd/configs/creditcard.json` | `Class`，第 30 列 |
-| Diamonds | `baseline/llmcd/configs/diamonds.json` | `price`，第 9 列 |
-| Elevator | `baseline/llmcd/configs/elevator.json` | `vibration`，第 7 列 |
-| Housesale | `baseline/llmcd/configs/housesale.json` | `Price`，第 39 列 |
+| Adult | `baseline/llmcd/configs/adult.json` | `income`, column 14 |
+| Cardio | `baseline/llmcd/configs/cardio.json` | `cardio`, column 11 |
+| CreditCard | `baseline/llmcd/configs/creditcard.json` | `Class`, column 30 |
+| Diamonds | `baseline/llmcd/configs/diamonds.json` | `price`, column 9 |
+| Elevator | `baseline/llmcd/configs/elevator.json` | `vibration`, column 7 |
+| Housesale | `baseline/llmcd/configs/housesale.json` | `Price`, column 39 |
 
-这些配置都走项目已有 loader，不直接重新读原始 CSV。这样能保持和 CHAP 主实验一致的预处理、列顺序和 target 位置。
+These configs use the project's existing loaders rather than directly re-reading raw CSVs, maintaining consistency with CHAP main experiments in preprocessing, column order, and target positions.
 
-已验证的本地 shape：
+Verified local shapes:
 
 ```text
 adult       (48842, 15)   target 14 income
@@ -68,7 +68,7 @@ elevator    (109563, 8)   target 7  vibration
 housesale   (30138, 40)   target 39 Price
 ```
 
-正式配置默认最后训练 MLP：
+Production configs default to MLP training:
 
 ```json
 "training": {
@@ -76,18 +76,18 @@ housesale   (30138, 40)   target 39 Price
 }
 ```
 
-## 一条命令端到端
+## One-Command End-to-End
 
-不调用 LLM，只用 fallback 规则跑完整流程：
+Without LLM, using fallback rules only:
 
 ```bash
 baseline/llmcd/scripts/run_e2e.sh baseline/llmcd/configs/adult.json
 ```
 
-调用 LLM 跑完整流程：
+With LLM:
 
 ```bash
-export LLMCD_API_KEY="你的 API key"
+export LLMCD_API_KEY="your-api-key"
 export LLMCD_BASE_URL="https://api.deepseek.com"
 export LLMCD_MODEL="deepseek-v4-flash"
 export USE_LLM=1
@@ -95,19 +95,19 @@ export USE_LLM=1
 baseline/llmcd/scripts/run_e2e.sh baseline/llmcd/configs/adult.json
 ```
 
-注意：不要把真实 API key 写进 json、py、sh 文件。只通过环境变量传入。
+Note: never write real API keys into json, py, or sh files. Only pass via environment variables.
 
-## 无网服务器推荐流程
+## Recommended Offline Server Workflow
 
-如果服务器无网，推荐分三步跑。
+If the server has no internet, run in three steps.
 
-先打印分步命令：
+First, print the step-by-step commands:
 
 ```bash
 baseline/llmcd/scripts/step_by_step_commands.sh baseline/llmcd/configs/adult.json
 ```
 
-### 第一步：无网服务器跑 PC
+### Step 1: Run PC on offline server
 
 ```bash
 .venv/bin/python baseline/llmcd/discover_pc_graph.py \
@@ -115,21 +115,21 @@ baseline/llmcd/scripts/step_by_step_commands.sh baseline/llmcd/configs/adult.jso
   --run_dir baseline/llmcd/runs/adult_llmcd
 ```
 
-输出：
+Output:
 
 ```text
 baseline/llmcd/runs/adult_llmcd/pc_graph.json
 ```
 
-把下面两个文件复制到有网机器：
+Copy these two files to an internet-connected machine:
 
 - `baseline/llmcd/configs/adult.json`
 - `baseline/llmcd/runs/adult_llmcd/pc_graph.json`
 
-### 第二步：有网机器调用 LLM
+### Step 2: Call LLM on internet machine
 
 ```bash
-export LLMCD_API_KEY="你的 API key"
+export LLMCD_API_KEY="your-api-key"
 export LLMCD_BASE_URL="https://api.deepseek.com"
 export LLMCD_MODEL="deepseek-v4-flash"
 
@@ -140,15 +140,15 @@ export LLMCD_MODEL="deepseek-v4-flash"
   --use_llm
 ```
 
-输出：
+Output:
 
 ```text
 baseline/llmcd/runs/adult_llmcd/final_graph.json
 ```
 
-把 `final_graph.json` 复制回无网服务器。
+Copy `final_graph.json` back to the offline server.
 
-### 第三步：无网服务器训练和测试
+### Step 3: Train and test on offline server
 
 ```bash
 .venv/bin/python baseline/llmcd/train_eval_from_graph.py \
@@ -157,13 +157,13 @@ baseline/llmcd/runs/adult_llmcd/final_graph.json
   --run_dir baseline/llmcd/runs/adult_llmcd
 ```
 
-输出：
+Output:
 
 ```text
 baseline/llmcd/runs/adult_llmcd/metrics.json
 ```
 
-## 文件结构
+## File Structure
 
 ```text
 baseline/llmcd/
@@ -192,17 +192,15 @@ baseline/llmcd/
   .env.example
 ```
 
-项目根目录还需要这些文件：
+Project root also requires:
 
-- `baseline/llm_cd_baseline.py`：复用已有数据 loader、PC 辅助函数、父节点 predictor 评估函数。
-- `baseline/llm_cd_prompts.py`：LLM-CD prompt 和 API 调用逻辑。
-- `requirements-baseline.txt`：baseline 依赖。
+- `baseline/llm_cd_baseline.py`: shared data loader, PC helpers, parent node predictor evaluation.
+- `baseline/llm_cd_prompts.py`: LLM-CD prompts and API call logic.
+- `requirements-baseline.txt`: baseline dependencies.
 
-## 每个阶段的输入输出
+## Stage Inputs and Outputs
 
-### 阶段 1：数据到 PC 图
-
-脚本：
+### Stage 1: Data to PC Graph
 
 ```bash
 .venv/bin/python baseline/llmcd/discover_pc_graph.py \
@@ -210,17 +208,17 @@ baseline/llmcd/
   --run_dir <run_dir>
 ```
 
-输出 `pc_graph.json`，主要字段：
+Output `pc_graph.json`, key fields:
 
-- `pc_directed_edges`：PC 发现的有向边
-- `pc_undirected_edges`：PC 保留的无向边
-- `uncertain_ci_pairs`：接近显著性阈值的候选 CI pair
-- `feature_names`：变量名
-- `feature_descriptions`：给 LLM 的变量说明
+- `pc_directed_edges`: directed edges found by PC
+- `pc_undirected_edges`: undirected edges retained by PC
+- `uncertain_ci_pairs`: CI pairs near the significance threshold
+- `feature_names`: variable names
+- `feature_descriptions`: variable descriptions for LLM
 
-### 阶段 2：PC 图到最终图
+### Stage 2: PC Graph to Final Graph
 
-调用 LLM：
+With LLM:
 
 ```bash
 .venv/bin/python baseline/llmcd/judge_llm_graph.py \
@@ -230,7 +228,7 @@ baseline/llmcd/
   --use_llm
 ```
 
-无网 fallback：
+Offline fallback:
 
 ```bash
 .venv/bin/python baseline/llmcd/judge_llm_graph.py \
@@ -239,15 +237,15 @@ baseline/llmcd/
   --run_dir <run_dir>
 ```
 
-输出 `final_graph.json`，主要字段：
+Output `final_graph.json`, key fields:
 
-- `graph`：最终邻接矩阵
-- `parents`：目标节点直接父节点下标
-- `parent_names`：目标节点直接父节点名字
-- `ci_decisions`：LLM 对 CI pair 的判断
-- `edge_decisions`：LLM 对边的方向、保留、删除判断
+- `graph`: final adjacency matrix
+- `parents`: direct parent indices of target node
+- `parent_names`: direct parent names of target node
+- `ci_decisions`: LLM decisions on CI pairs
+- `edge_decisions`: LLM decisions on edge orientation, retention, deletion
 
-### 阶段 3：最终图到训练测试
+### Stage 3: Final Graph to Train/Test
 
 ```bash
 .venv/bin/python baseline/llmcd/train_eval_from_graph.py \
@@ -256,17 +254,17 @@ baseline/llmcd/
   --run_dir <run_dir>
 ```
 
-输出 `metrics.json`，其中 `metrics.test` 是最终测试结果。
+Output `metrics.json`, where `metrics.test` contains the final test results.
 
-## 配置怎么改
+## Configuration
 
-复制模板：
+Copy the template:
 
 ```bash
 cp baseline/llmcd/configs/template.json baseline/llmcd/configs/my_dataset.json
 ```
 
-如果使用项目已有 CHAP loader，只需要改：
+If using the project's existing CHAP loader, only modify:
 
 ```json
 {
@@ -275,7 +273,7 @@ cp baseline/llmcd/configs/template.json baseline/llmcd/configs/my_dataset.json
 }
 ```
 
-可用 dataset 名称：
+Available dataset names:
 
 - `adult`
 - `cardio`
@@ -287,7 +285,7 @@ cp baseline/llmcd/configs/template.json baseline/llmcd/configs/my_dataset.json
 - `housing`
 - `synthetic`
 
-如果使用自定义 CSV，填写 `data`：
+For custom CSV, fill in `data`:
 
 ```json
 {
@@ -306,18 +304,17 @@ cp baseline/llmcd/configs/template.json baseline/llmcd/configs/my_dataset.json
 }
 ```
 
-字段说明：
+Fields:
+- `table_path`: CSV path. If empty, uses project existing loader.
+- `header`: `"infer"` for header present; `null` for no header.
+- `target_column`: target column name. Recommended when header exists.
+- `target_idx`: target column index (0-based).
+- `categorical_indices`: categorical variable column indices.
+- `continuous_indices`: continuous variable column indices.
+- `standardize_continuous`: whether to standardize continuous variables.
+- `drop_columns`: column names to exclude.
 
-- `table_path`：CSV 路径。如果为空，走项目已有 loader。
-- `header`：有表头写 `"infer"`；没有表头写 `null`。
-- `target_column`：目标列名。有表头时推荐用这个。
-- `target_idx`：目标列下标。从 0 开始。
-- `categorical_indices`：分类变量列下标。
-- `continuous_indices`：连续变量列下标。
-- `standardize_continuous`：是否标准化连续变量。
-- `drop_columns`：不参与实验的列名。
-
-LLM-CD 依赖变量语义，建议认真写 `features`：
+LLM-CD relies on variable semantics; write `features` carefully:
 
 ```json
 {
@@ -331,22 +328,18 @@ LLM-CD 依赖变量语义，建议认真写 `features`：
 }
 ```
 
-`index` 必须和数据矩阵列下标一致。
+`index` must match the data matrix column index.
 
-## 数据集语义说明
+## Dataset Semantic Notes
 
-几个需要接手人注意的点：
+- `adult`: reads processed numeric matrices; config descriptions use Adult Census original field semantics.
+- `cardio`: CHAP preprocessing discretized several continuous medical variables. Config descriptions use original medical meanings, but PC and training use processed values.
+- `creditcard`: `V1` through `V28` are anonymous PCA features with no known business meaning. LLM advantages are naturally limited on such data.
+- `diamonds`: `price` is moved to the last column as regression target.
+- `elevator`: `vibration` is moved to the last column as regression target; `x1` through `x5` are anonymous or engineering sensor features.
+- `housesale`: 6 city CSVs merged and shuffled with seed 42, `Price` is the last column regression target.
 
-- `adult`：本项目实际读入的是处理后的数值矩阵，配置里的说明写的是 Adult Census 原始字段语义。
-- `cardio`：CHAP 预处理把若干连续医学变量离散化。配置里的说明写原始医学含义，但 PC 和训练使用处理后的数值。
-- `creditcard`：`V1` 到 `V28` 是匿名 PCA 特征，无法知道真实业务含义。LLM 在这类数据上的优势会天然受限。
-- `diamonds`：`price` 被移动到最后一列作为回归目标。
-- `elevator`：`vibration` 被移动到最后一列作为回归目标；`x1` 到 `x5` 是匿名或工程传感器特征。
-- `housesale`：6 个城市 CSV 合并后按 seed 42 shuffle，`Price` 是最后一列回归目标。
-
-## PC 参数
-
-配置中：
+## PC Parameters
 
 ```json
 "pc": {
@@ -359,18 +352,15 @@ LLM-CD 依赖变量语义，建议认真写 `features`：
 }
 ```
 
-常用改法：
+Common adjustments:
+- PC too slow: reduce `sample_size`.
+- High-dim too slow: set `sample_size` to `500` for pipeline validation first.
+- Singular matrix error: code auto-retries PC with tiny `jitter_scale`.
+- Reduce LLM calls: lower `max_uncertain_pairs`.
 
-- PC 太慢：降低 `sample_size`。
-- 高维数据太慢：先把 `sample_size` 调到 `500` 做管线验证。
-- 奇异矩阵报错：代码会自动用极小 `jitter_scale` 重跑 PC。
-- 想减少 LLM 调用量：降低 `max_uncertain_pairs`。
+`creditcard` and `housesale` already have `sample_size` set to `500` due to higher dimensionality. Training still uses full data.
 
-当前 `creditcard` 和 `housesale` 的 `sample_size` 已设为 `500`，因为它们维度较高，本地 Mac 上用 `2000` 跑 PC 会明显变慢。训练阶段仍使用完整数据。
-
-## Predictor 参数
-
-配置中：
+## Predictor Parameters
 
 ```json
 "training": {
@@ -378,26 +368,24 @@ LLM-CD 依赖变量语义，建议认真写 `features`：
 }
 ```
 
-可选：
+Options:
+- `mlp`: MLPClassifier or MLPRegressor (default).
+- `rf`: RandomForest, works for both classification and regression.
+- `logistic`: LogisticRegression for classification.
+- `linear`: LinearRegression for regression.
 
-- `mlp`：MLPClassifier 或 MLPRegressor，正式配置默认值。
-- `rf`：RandomForest，分类和回归都能用。
-- `logistic`：分类任务 LogisticRegression。
-- `linear`：回归任务 LinearRegression。
+For experimental consistency, keep the same predictor setting across all datasets.
 
-为了实验一致性，正式 baseline 建议所有数据集保持同一个 predictor 设置。
+## Mac Local Verification
 
-## 已在 Mac 本地验证
+Locally verified:
+- JSON syntax check for all 6 production configs
+- Shape, target index, task type check for all 6 configs and loaders
+- PC graph generation for all 6 datasets
+- Fallback final graph generation for all 6 datasets
+- MLP training and metrics output for all 6 datasets
 
-本地已经跑通过：
-
-- 6 个正式配置的 JSON 语法检查
-- 6 个正式配置和 loader 的 shape、target 下标、任务类型检查
-- 6 个数据集的 PC 图生成
-- 6 个数据集的 fallback final graph 生成
-- 6 个数据集的 MLP 训练和 metrics 输出
-
-fallback 跑出的父节点示例：
+Fallback parent node examples:
 
 ```text
 adult       -> marital_status, sex, capital_gain, capital_loss
@@ -408,13 +396,13 @@ elevator    -> x4
 housesale   -> Location, No_of_Bedrooms, Resale
 ```
 
-这些结果只是无 API fallback 的冒烟验证，不等价于正式 LLM-CD 结果。正式实验应在第二阶段加 `--use_llm`。
+These are smoke-test results from the no-API fallback, not equivalent to formal LLM-CD results. Production experiments should add `--use_llm` in stage 2.
 
-## 常见问题
+## FAQ
 
-### API 调不通
+### API not working
 
-检查：
+Check:
 
 ```bash
 echo "$LLMCD_BASE_URL"
@@ -422,20 +410,20 @@ echo "$LLMCD_MODEL"
 test -n "$LLMCD_API_KEY" && echo "api key is set"
 ```
 
-不要把 key 打印出来，也不要写进文件。
+Do not print the key or write it to files.
 
-### 服务器没有网络
+### Server has no internet
 
-只在无网服务器跑阶段 1 和阶段 3。阶段 2 拿到有网机器跑，产物 `final_graph.json` 再复制回来。
+Only run stages 1 and 3 on the offline server. Run stage 2 on an internet-connected machine and copy `final_graph.json` back.
 
-### PC 很慢
+### PC is slow
 
-优先调小配置里的 `pc.sample_size`。这只影响因果图发现阶段，不影响最终 MLP 训练使用完整数据。
+First reduce `pc.sample_size` in config. This only affects the causal graph discovery stage; final MLP training still uses full data.
 
-### 没有列名或列名匿名
+### No column names or anonymous columns
 
-可以跑，但 LLM 判断会弱。`creditcard` 的 PCA 特征就是这种情况。
+Works, but LLM judgment will be weaker. `creditcard` PCA features are an example of this case.
 
-## 和原论文的差异
+## Differences from Original Paper
 
-这个实现没有修改 `causal-learn` 内部源码，而是把 LLM 介入放在 PC 图之后的独立阶段。这样更容易在无网服务器和有网机器之间搬运中间文件，也更方便接手人调试；代价是 skeleton 阶段的 LLM 介入不是完全嵌入 PC 搜索过程。
+This implementation does not modify `causal-learn` internals. Instead, LLM intervention happens in an independent stage after PC graph construction. This makes it easier to transfer intermediate files between offline and online machines and simplifies debugging; the trade-off is that LLM intervention during the skeleton phase is not fully embedded in the PC search process.

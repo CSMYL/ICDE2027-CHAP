@@ -7,20 +7,21 @@ RUN_DIR="baseline/llmcd/runs/${RUN_NAME}"
 
 cat <<EOF
 ################################################################################
-# LLM-CD 分步命令说明
+# LLM-CD Step-by-Step Commands
 ################################################################################
-# 配置文件: $CONFIG
-# 本次 run 目录: $RUN_DIR
+# Config: $CONFIG
+# Run directory: $RUN_DIR
 #
-# 产物说明:
-#   1. pc_graph.json     : 第一步输出，PC 算法发现的初始图
-#   2. final_graph.json  : 第二步输出，LLM 或 fallback 规则修正后的最终图
-#   3. metrics.json      : 第三步输出，只用目标父节点训练/测试的结果
+# Output artifacts:
+#   1. pc_graph.json     : Step 1 output, initial graph from PC algorithm
+#   2. final_graph.json  : Step 2 output, final graph after LLM or fallback rules
+#   3. metrics.json      : Step 3 output, train/test results using target parent nodes
 ################################################################################
 
 ################################################################################
-# 0. 可选：如果你在有网机器上调用大模型 API，先设置这些环境变量
-#    注意：不要把真实 key 写进代码或配置文件。
+# 0. Optional: if running on a machine with internet access to call LLM APIs,
+#    set these environment variables first.
+#    NOTE: never write real API keys into code or config files.
 ################################################################################
 export LLMCD_API_KEY="replace-with-your-api-key"
 export LLMCD_BASE_URL="https://api.deepseek.com"
@@ -29,16 +30,17 @@ export MPLCONFIGDIR="\$PWD/.cache/matplotlib"
 mkdir -p "$RUN_DIR" .cache/matplotlib
 
 ################################################################################
-# 1. 无网服务器可执行：输入数据 -> PC 初始图
+# 1. Offline-capable step: input data -> PC initial graph
 #
-# 输入:
+# Input:
 #   - $CONFIG
-#   - 配置中指定的数据，或项目内置 CHAP loader
+#   - Data specified in config, or project built-in CHAP loader
 #
-# 输出:
+# Output:
 #   - $RUN_DIR/pc_graph.json
 #
-# 做完这一步后，如果服务器无网，需要把下面两个文件复制到有网机器:
+# After this step, if the server has no internet, copy the following files to
+# a machine with internet access:
 #   - $CONFIG
 #   - $RUN_DIR/pc_graph.json
 ################################################################################
@@ -47,19 +49,19 @@ mkdir -p "$RUN_DIR" .cache/matplotlib
   --run_dir "$RUN_DIR"
 
 ################################################################################
-# 2A. 有网机器执行：PC 初始图 -> LLM 判断后的最终图
+# 2A. Internet-required step: PC initial graph -> LLM-judged final graph
 #
-# 前提:
-#   - 已经设置 LLMCD_API_KEY / LLMCD_BASE_URL / LLMCD_MODEL
+# Prerequisites:
+#   - LLMCD_API_KEY / LLMCD_BASE_URL / LLMCD_MODEL must be set
 #
-# 输入:
+# Input:
 #   - $CONFIG
 #   - $RUN_DIR/pc_graph.json
 #
-# 输出:
+# Output:
 #   - $RUN_DIR/final_graph.json
 #
-# 做完这一步后，把 final_graph.json 复制回无网服务器即可训练。
+# After this step, copy final_graph.json back to the offline server to train.
 ################################################################################
 .venv/bin/python baseline/llmcd/judge_llm_graph.py \\
   --config "$CONFIG" \\
@@ -68,15 +70,15 @@ mkdir -p "$RUN_DIR" .cache/matplotlib
   --use_llm
 
 ################################################################################
-# 2B. 无网 fallback：PC 初始图 -> 规则定向后的最终图，不调用 API
+# 2B. Offline fallback: PC initial graph -> rule-oriented final graph, no API
 #
-# 如果暂时没有 API，或者只想先跑通流程，用这一段替代 2A。
+# Use this instead of 2A if no API is available, or for quick pipeline testing.
 #
-# 输入:
+# Input:
 #   - $CONFIG
 #   - $RUN_DIR/pc_graph.json
 #
-# 输出:
+# Output:
 #   - $RUN_DIR/final_graph.json
 ################################################################################
 .venv/bin/python baseline/llmcd/judge_llm_graph.py \\
@@ -85,13 +87,13 @@ mkdir -p "$RUN_DIR" .cache/matplotlib
   --run_dir "$RUN_DIR"
 
 ################################################################################
-# 3. 无网服务器可执行：最终图 -> 取目标父节点训练和测试
+# 3. Offline-capable step: final graph -> train and test on target parent nodes
 #
-# 输入:
+# Input:
 #   - $CONFIG
 #   - $RUN_DIR/final_graph.json
 #
-# 输出:
+# Output:
 #   - $RUN_DIR/metrics.json
 ################################################################################
 .venv/bin/python baseline/llmcd/train_eval_from_graph.py \\

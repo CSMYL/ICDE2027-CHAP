@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
-# 自动调参：每个数据集试 3 组 alpha，选最优
-# 用法：bash baseline/llmcd/scripts/tune_all.sh
+# Auto-tuning: try 3 alpha values per dataset, pick best
+# Usage: bash baseline/llmcd/scripts/tune_all.sh
 # ============================================================
 set -e
 
@@ -12,7 +12,6 @@ cd "$PROJECT_ROOT"
 PYTHON=".venv/bin/python"
 RUNS_DIR="baseline/llmcd/runs"
 
-# 数据集和要试的 alpha 组合
 DATASETS=(
   "adult:0.01"
   "adult:0.05"
@@ -55,14 +54,12 @@ for entry in "${DATASETS[@]}"; do
   CONFIG="$PROJECT_ROOT/baseline/llmcd/configs/${ds}.json"
   RUN_DIR="$RUNS_DIR/${ds}_alpha${alpha}"
 
-  # 跳过不存在的配置
   if [ ! -f "$CONFIG" ]; then
     continue
   fi
 
   echo "===== $ds  alpha=$alpha ====="
 
-  # 临时改 alpha
   cp "$CONFIG" /tmp/llmcd_tune_$$.json
   python3 -c "
 import json
@@ -88,7 +85,6 @@ json.dump(cfg, open('/tmp/llmcd_tune_$$.json', 'w'), indent=2)
     --graph "$RUN_DIR/final_graph.json" \
     --run_dir "$RUN_DIR" 2>&1 | tail -1
 
-  # 打印关键指标
   python3 -c "
 import json, sys
 try:
@@ -100,7 +96,7 @@ try:
         print(f'  AUC={t[\"auc\"]:.4f}  F1={t[\"f1_score\"]:.4f}  Acc={t[\"accuracy\"]:.4f}')
     else:
         print(f'  alpha=$alpha  Parents({len(p)}): {p}')
-        print(f'  R²={t[\"r2\"]:.4f}  RMSE={t[\"rmse\"]:.4f}')
+        print(f'  R^2={t[\"r2\"]:.4f}  RMSE={t[\"rmse\"]:.4f}')
 except:
     print('  FAILED')
 "
@@ -110,10 +106,9 @@ except:
 done
 
 echo "============================================"
-echo "  调参完成！查看各 best alpha："
+echo "  Tuning complete! Best alpha per dataset:"
 echo "============================================"
 
-# 汇总
 for ds in adult cardio creditcard crime diamonds elevator housesale housing meps synthetic_demo; do
   best_alpha=""
   best_score=""

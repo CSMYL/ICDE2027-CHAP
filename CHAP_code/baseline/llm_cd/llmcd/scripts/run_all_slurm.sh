@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
-# Slurm 数组任务 — 每个数据集一个 job
-# 用法：sbatch baseline/llmcd/scripts/run_all_slurm.sh
+# Slurm array job — one job per dataset
+# Usage: sbatch baseline/llmcd/scripts/run_all_slurm.sh
 # ============================================================
 #SBATCH --job-name=llmcd_baseline
 #SBATCH --output=logs/llmcd_%A_%a.out
@@ -10,7 +10,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=12:00:00
-#SBATCH --partition=gpu    # 按你的集群改
+#SBATCH --partition=gpu
 
 set -e
 
@@ -28,7 +28,6 @@ DATASETS=(
   "meps"
 )
 
-# ---- Slurm 会为每个 array index 跑一个 job ----
 TASK_ID=${SLURM_ARRAY_TASK_ID:-0}
 DS="${DATASETS[$TASK_ID]}"
 
@@ -72,4 +71,4 @@ python baseline/llmcd/train_eval_from_graph.py \
     --graph "$RUN_DIR/final_graph.json" \
     --run_dir "$RUN_DIR"
 
-echo "Done → $RUN_DIR/metrics.json"
+echo "Done -> $RUN_DIR/metrics.json"

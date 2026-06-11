@@ -8,9 +8,8 @@ import pandas as pd
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-EXP_DIR = HERE  # 当前目录已经是 diamonds_ood_experiments
+EXP_DIR = HERE
 
-# 连续特征与分类特征（基于 diamonds_mixed.csv）
 CONT_COLS = ["carat", "depth", "table", "x", "y", "z", "price"]
 CAT_COLS = ["cut", "color", "clarity"]
 
@@ -19,8 +18,8 @@ def standardize_by_train(
     df_train: pd.DataFrame, df_test: pd.DataFrame, cols: list[str]
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     """
-    使用 train 上的均值/标准差对连续特征做标准化，并应用到 train/test。
-    返回标准化后的两个 DataFrame 以及 (col -> (mean, std)) 记录。
+    Standardize continuous features using train statistics (mean/std) and apply to train/test.
+    Returns standardized DataFrames and (col -> (mean, std)) records.
     """
     stats = {}
     train = df_train.copy()
@@ -29,7 +28,6 @@ def standardize_by_train(
     for col in cols:
         mu = float(train[col].mean())
         sigma = float(train[col].std(ddof=0))
-        # 防止 sigma 为 0
         if sigma == 0.0:
             sigma = 1.0
         stats[col] = (mu, sigma)
@@ -56,10 +54,8 @@ def main() -> None:
         train_pct = 100.0 * n_train / n_total
         test_pct = 100.0 * n_test / n_total
 
-        # 标准化连续特征（按 train 统计量）
         std_train, std_test, _ = standardize_by_train(df_train, df_test, CONT_COLS)
 
-        # 拼接为一个完整数据集（不保留 split 列，方便后续统一注册）
         df_shift = pd.concat([std_train, std_test], axis=0, ignore_index=True)
 
         out_name = f"shift{exp_id}.csv"
@@ -82,9 +78,7 @@ def main() -> None:
             f"train%={train_pct:.2f}%, test%={test_pct:.2f}% -> wrote {out_name}"
         )
 
-    # 生成 Markdown 说明
     df_summary = pd.DataFrame(summary_rows)
-    # 简单渲染成 Markdown 表格（避免依赖 tabulate）
     headers = list(df_summary.columns)
     rows = df_summary.astype(str).values.tolist()
 
@@ -103,12 +97,11 @@ def main() -> None:
 
     md_path = os.path.join(EXP_DIR, "shifts_summary.md")
     with open(md_path, "w", encoding="utf-8") as f:
-        f.write("# Diamonds OOD Shifts 训练/测试比例说明\n\n")
+        f.write("# Diamonds OOD Shifts Train/Test Ratio Summary\n\n")
         f.write(md_table + "\n")
 
-    print(f"\n已写出 shift1/2/3 及 Markdown 汇总: {md_path}")
+    print(f"\nGenerated shift1/2/3 CSVs and Markdown summary: {md_path}")
 
 
 if __name__ == "__main__":
     main()
-

@@ -1,35 +1,28 @@
 #!/bin/bash
-# TabGNN GPU训练运行脚本
-# 使用conda环境 tabgnn_clean
-# 超参数配置在脚本中，可直接修改
+# TabGNN GPU training script
+# Uses conda environment tabgnn_clean
 
 cd "$(dirname "$0")"
 
-# 激活conda环境
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate tabgnn_clean
 
-# 设置CUDA库路径
 export LD_LIBRARY_PATH="/usr/local/cuda-12.2/targets/x86_64-linux/lib:/usr/local/cuda-12.2/lib64:$LD_LIBRARY_PATH"
 
 # ============================================
-# 超参数配置（可直接修改此部分）
+# Hyperparameters (modify as needed)
 # ============================================
-DATASET="diamonds"              # 数据集名称
-EPOCHS=80                    # 训练轮数（增加轮数，配合学习率调度）
-BATCH_SIZE=256                # 批次大小（增大batch size，提高训练稳定性）
-HIDDEN_DIM=256               # 隐藏层维度（增大模型容量，diamonds样本多）
-N_LAYERS=4                   # GNN层数（增加深度，提升表达能力）
-DROPOUT=0.35                 # Dropout比例（提高dropout，减少过拟合）
-LR=3e-4                    # 学习率（大幅提高学习率，原1.5e-5太小）
-TRAIN_SPLIT=0.8              # 训练集比例
-DEVICE="cuda:1"                # 设备 (cuda 或 cpu)
-# FCOUT_LAYERS="64 32"       # 输出层MLP层大小（默认[64, 32]）
-# CONNECT_KEYS=""            # 连接键列表，留空表示自动检测
-# MAX_NEIGHBORS=10           # 每个连接键的最大邻居数
+DATASET="diamonds"
+EPOCHS=80
+BATCH_SIZE=256
+HIDDEN_DIM=256
+N_LAYERS=4
+DROPOUT=0.35
+LR=3e-4
+TRAIN_SPLIT=0.8
+DEVICE="cuda:1"
 # ============================================
 
-# 构建训练命令
 CMD="python train.py \
     --dataset $DATASET \
     --epochs $EPOCHS \
@@ -41,21 +34,19 @@ CMD="python train.py \
     --train_split $TRAIN_SPLIT \
     --device $DEVICE"
 
-# 如果命令行有参数，则使用命令行参数（覆盖脚本中的配置）
 if [ $# -gt 0 ]; then
     CMD="python train.py $@"
 fi
 
-# 运行训练
 echo "=========================================="
-echo "TabGNN GPU训练"
+echo "TabGNN GPU Training"
 echo "=========================================="
-echo "数据集: $DATASET"
-echo "训练轮数: $EPOCHS"
-echo "批次大小: $BATCH_SIZE"
-echo "隐藏层维度: $HIDDEN_DIM"
-echo "GNN层数: $N_LAYERS"
-echo "设备: $DEVICE"
+echo "Dataset: $DATASET"
+echo "Epochs: $EPOCHS"
+echo "Batch size: $BATCH_SIZE"
+echo "Hidden dim: $HIDDEN_DIM"
+echo "GNN layers: $N_LAYERS"
+echo "Device: $DEVICE"
 echo "=========================================="
 echo ""
 

@@ -4,8 +4,8 @@ import pdb
 import numpy as np
 import torch
 from dgl import DGLGraph
-# 在DGL 0.9+中，BatchedDGLGraph已被移除，dgl.batch()返回DGLGraph
-# 为了兼容性，使用DGLGraph作为类型别名
+# In DGL 0.9+, BatchedDGLGraph has been removed; dgl.batch() returns DGLGraph.
+# For compatibility, use DGLGraph as the type alias.
 try:
     from dgl import BatchedDGLGraph
 except ImportError:
@@ -20,20 +20,18 @@ from models import readouts
 
 class SafeBatchNorm1d(nn.Module):
     """
-    安全的BatchNorm1d包装器，当batch_size=1时自动使用LayerNorm1d
-    这解决了BatchNorm在batch_size=1时的报错问题，提高了代码的扩展性
+    Safe BatchNorm1d wrapper that falls back to LayerNorm1d when batch_size=1.
+    This avoids BatchNorm errors with batch_size=1.
     """
     def __init__(self, batchnorm):
         super().__init__()
         self.batchnorm = batchnorm
         self.layernorm = nn.LayerNorm(batchnorm.num_features)
         self.use_layernorm = False
-    
+
     def forward(self, x):
-        # 如果batch_size=1，使用LayerNorm
         if x.size(0) == 1:
             if not self.use_layernorm:
-                # 复制BatchNorm的权重和偏置到LayerNorm
                 self.layernorm.weight.data = self.batchnorm.weight.data.clone()
                 self.layernorm.bias.data = self.batchnorm.bias.data.clone()
                 self.use_layernorm = True
@@ -44,9 +42,7 @@ class SafeBatchNorm1d(nn.Module):
 
 
 class GNNModelBase(nn.Module):
-    """
-    Base class for all GNN models
-    """
+    """Base class for all GNN models."""
 
     def __init__(self, writer, dataset_name, feature_encoders, hidden_dim, init_model_class_name, init_model_kwargs,
                  n_layers, activation_class_name, activation_class_kwargs, norm_class_name, norm_class_kwargs,
@@ -73,14 +69,13 @@ class GNNModelBase(nn.Module):
         self.cat_fz_embedding = cat_fz_embedding
         self.use_readout = use_readout
 
-        # Create self.initializers for use in self.init_batch
         self.node_initializers = nn.ModuleDict()
         self.node_init_info = {}
         for node_type, features in self.db_info['node_types_and_features'].items():
             cat_feat_origin_cards = []
             cont_feat_origin = []
             for feature_name, feature_info in features.items():
-                if '{}.{}'.format(node_type, feature_name) != self.db_info['label_feature']: #and 'FZ' in feature_name:
+                if '{}.{}'.format(node_type, feature_name) != self.db_info['label_feature']:
                     enc = self.feature_encoders[node_type][feature_name]
                     cat_feat_origin_cards += [(f'{feature_name}_{i}', card) for i, card in enumerate(enc.cat_cards)]
                     cont_feat_origin += [feature_name] * enc.cont_dim
@@ -95,13 +90,11 @@ class GNNModelBase(nn.Module):
                                                                       n_out=hidden_dim,
                                                                       **self.init_model_kwargs)
 
-        # Create readout function
         if self.use_jknet:
             self.readout = readouts.__dict__[readout_class_name](hidden_dim=hidden_dim*n_layers, **readout_kwargs)
         else:
             self.readout = readouts.__dict__[readout_class_name](hidden_dim=hidden_dim, **readout_kwargs)
 
-        # Create MLP "fcout" to produce output of model from output of readout
         if all(isinstance(s, float) for s in fcout_layer_sizes):
             fcout_layer_sizes = [int(self.hidden_dim * s) for s in fcout_layer_sizes]
         assert all(isinstance(s, int) for s in fcout_layer_sizes)
@@ -110,10 +103,10 @@ class GNNModelBase(nn.Module):
         prev_layer_size = self.hidden_dim
         if self.use_jknet:
             prev_layer_size += self.hidden_dim*(n_layers-1)
-        
+
         if self.cat_fz_embedding:
             prev_layer_size += self.hidden_dim
-        
+
         fcout_layers = []
         for layer_size in self.layer_sizes:
             fcout_layers.append(nn.Linear(prev_layer_size, layer_size))
@@ -129,35 +122,30 @@ class GNNModelBase(nn.Module):
 
     def get_norm(self, num_feats):
         """
-        获取归一化层，自动处理BatchNorm在batch_size=1时的问题
-        如果使用BatchNorm1d，会创建一个包装器，在batch_size=1时自动切换到LayerNorm1d
+        Get normalization layer, automatically handling BatchNorm with batch_size=1.
+        If BatchNorm1d is used, wraps it in SafeBatchNorm1d for automatic fallback.
         """
         norm = self.norm_class(num_feats, **self.norm_class_kwargs)
-        
-        # 如果是BatchNorm1d，创建一个安全的包装器
+
         if isinstance(norm, nn.BatchNorm1d):
             return SafeBatchNorm1d(norm)
-        
+
         return norm
 
     def init_batch(self, bdgl: BatchedDGLGraph, b_features):
         """
-        Uses the tabular models in self.node_initializers to encode the raw database features (datetimes, text, etc.) of
-        each table, such that all nodes in bdgl have the same hidden state size.
+        Uses the tabular models in self.node_initializers to encode the raw database features
+        (datetimes, text, etc.) of each table, such that all nodes in bdgl have the same hidden
+        state size.
 
-        (Note: some of the encoding actually happens during data loading, for efficiency.  See the __init__ method of
-        DatabaseDataset and the get_DGL_collator function.)
-
-        This method is run before self.gnn_forward
+        This method is run before self.gnn_forward.
         """
         b_node_types = bdgl.ndata['node_types']
         bdgl.ndata['h'] = torch.empty(bdgl.number_of_nodes(), self.hidden_dim, device=b_node_types.device)
         bdgl.ndata['h'][:] = np.nan
         for node_type, collated_features in b_features.items():
-            # Compute the initial features for this node type...
             node_features = self.node_initializers[node_type](collated_features)
 
-            # Scatter these features to the appropriate entries in bdgl.ndata
             node_type_int = self.db_info['node_type_to_int'][node_type]
             idxs_this_node_type = (b_node_types == node_type_int).nonzero()[:, 0]
             bdgl.nodes[idxs_this_node_type].data['h'] = node_features
@@ -165,37 +153,24 @@ class GNNModelBase(nn.Module):
         return bdgl
 
     def forward(self, input):
-        """
-        Returns logits for output classes
-        """
+        """Returns logits for output classes."""
         bdgl, features, main_node_ids = input
-        # pdb.set_trace()
-        # t = time.perf_counter()
         g = self.init_batch(bdgl, features)
-        # if self.training:
-        #   self.writer.add_scalar('CodeProfiling/Model/init_batch', time.perf_counter() - t, self.writer.batches_done)
-        #
-        # t = time.perf_counter()
 
         fz_embedding = None
-        # 不同模型的gnn_forward签名不同，这里传递main_node_ids作为app_embedding
-        # 如果模型不需要main_node_ids，可以在gnn_forward中忽略
         out = self.gnn_forward(g, main_node_ids)
 
-        # if self.training:
-        #   self.writer.add_scalar('CodeProfiling/Model/gnn_forward', time.perf_counter() - t, self.writer.batches_done)
         return out
 
     def gnn_forward(self, g: BatchedDGLGraph, features):
         """
         Runs the GNN component of the model and returns logits for output classes.
 
-        :param g: BatchedDGLGraph with g.ndata[h] initialized to a (n_nodes x hidden_dim) tensor by self.init_batch
+        :param g: BatchedDGLGraph with g.ndata[h] initialized to (n_nodes x hidden_dim) tensor
+                  by self.init_batch
         """
         raise NotImplementedError
 
     def pred_from_output(self, output):
-        """
-        Returns the model's prediction of the class of the input given the output of self.forward
-        """
+        """Returns the model's class prediction given the output of self.forward."""
         return output.max(dim=1, keepdim=True)[1]

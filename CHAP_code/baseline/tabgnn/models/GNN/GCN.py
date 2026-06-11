@@ -25,7 +25,7 @@ class GCN(GNNModelBase):
             self.layers.append(nn.ModuleDict({
                 'gc': GraphConv(in_feats=self.hidden_dim,
                                 out_feats=self.hidden_dim,
-                                norm='both',  # DGL 0.9.1使用字符串而不是True
+                                norm='both',
                                 bias=True,
                                 activation=self.get_act()),
                 'norm': self.get_norm(self.hidden_dim),
@@ -34,26 +34,25 @@ class GCN(GNNModelBase):
 
     def gnn_forward(self, g: BatchedDGLGraph, app_embedding):
         feats = g.ndata['h']
-        layer_outputs=[]
+        layer_outputs = []
         for block in self.layers:
             feats = block['gc'](g, feats)
             feats = block['norm'](feats)
             feats = block['do'](feats)
             layer_outputs.append(feats)
-        
-        if self.use_jknet: 
+
+        if self.use_jknet:
             jknet_feature = torch.cat(layer_outputs, dim=1)
-            readout = self.readout(g, jknet_feature)       
+            readout = self.readout(g, jknet_feature)
         else:
             readout = self.readout(g, feats)
-        
+
         if self.cat_fz_embedding:
             readout = torch.cat((readout, app_embedding), 1)
 
         out = self.fcout(readout)
 
         return out
-
 
 
 class no_GNN(GNNModelBase):
@@ -68,7 +67,6 @@ class no_GNN(GNNModelBase):
         return out
 
 
-
 class RelationalGCN(GNNModelBase):
     """
     Relational Graph Convolutional Network as described in https://arxiv.org/abs/1703.06103
@@ -78,7 +76,7 @@ class RelationalGCN(GNNModelBase):
         super().__init__(**kwargs)
         self.layers = nn.ModuleList()
         self.n_relations = 2 * len(
-            self.db_info['edge_type_to_int']) - 1  # there are negative edge types for the reverse edges
+            self.db_info['edge_type_to_int']) - 1
         for _ in range(self.n_layers):
             self.layers.append(nn.ModuleDict({'rgc': RelGraphConv(in_feat=self.hidden_dim,
                                                                   out_feat=self.hidden_dim,
@@ -88,7 +86,7 @@ class RelationalGCN(GNNModelBase):
                                                                   bias=True,
                                                                   dropout=self.p_dropout,
                                                                   activation=self.get_act(),
-                                                                  self_loop=False,  # It's already in the data
+                                                                  self_loop=False,
                                                                   ),
                                               'norm': self.get_norm(self.hidden_dim)
                                               }))
@@ -105,16 +103,14 @@ class RelationalGCN(GNNModelBase):
 
 
 class ERGCN(GNNModelBase):
-    """
-    GCN using different linear mappings for each node and edge type
-    """
+    """GCN using different linear mappings for each node and edge type."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layers = nn.ModuleList()
         self.n_node_types = len(self.db_info['node_type_to_int'])
         self.n_relations = 2 * len(
-            self.db_info['edge_type_to_int']) - 1  # there are negative edge types for the reverse edges
+            self.db_info['edge_type_to_int']) - 1
         for _ in range(self.n_layers):
             self.layers.append(nn.ModuleDict({'ergc': ERGCNConv(in_feat=self.hidden_dim,
                                                                 out_feat=self.hidden_dim,
@@ -126,7 +122,7 @@ class ERGCN(GNNModelBase):
                                               'norm': self.get_norm(self.hidden_dim)
                                               }))
 
-    def gnn_forward(self, g: BatchedDGLGraph,  fz_embedding, main_node_ids):
+    def gnn_forward(self, g: BatchedDGLGraph, fz_embedding, main_node_ids):
         feats = g.ndata['h']
         ntypes = g.ndata['node_types']
         etypes = g.edata['edge_types'] + self.n_relations // 2
@@ -157,9 +153,8 @@ class ERGCNConv(nn.Module):
         return {'msg': msg, 'etype': etypes}
 
     def update_func(self, nodes):
-        """Aggregates the messages, but doesn't do the complete hidden state update"""
+        """Aggregates the messages, but doesn't do the complete hidden state update."""
         in_msg = nodes.mailbox['msg']
-        # Normalize by edge type
         in_etype = nodes.mailbox['etype'].detach()[0]
         counts = F.one_hot(in_etype).sum(axis=0, keepdim=True)
         counts = torch.index_select(counts, 1, in_etype).unsqueeze(2)
@@ -168,12 +163,10 @@ class ERGCNConv(nn.Module):
         return {'msg': in_msg}
 
     def forward(self, graph, feats, ntypes, etypes):
-        # Pass and aggregate messages
         graph = graph.local_var()
         graph.ndata['h'] = feats
         graph.edata['type'] = etypes
         graph.update_all(self.message_func, self.update_func)
-        # Update hidden state
         feats = graph.ndata['h']
         msg = graph.ndata['msg']
         feats = self.fc_node(feats, ntypes)
@@ -181,4 +174,3 @@ class ERGCNConv(nn.Module):
         feats = self.activation(feats)
         F.dropout(feats, p=self.p_dropout, training=self.training)
         return feats
-

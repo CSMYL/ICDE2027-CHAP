@@ -76,20 +76,15 @@ def log_param_values(writer, model):
 
 
 def truncate_graph(db_info, max_nodes_per_graph, edge_list, node_types, edge_types, features):
-    """
-    Returns a trunated copy of edge_list, node_types, edge_types, and features.
-    Removes all nodes with index >= max_nodes_per_graph
-    """
-    # Cutoff nodes
+    """Returns a truncated copy of edge_list, node_types, edge_types, and features.
+    Removes all nodes with index >= max_nodes_per_graph."""
     cutoff_node_types = node_types[:max_nodes_per_graph]
-    # Cutoff edges
     cutoff_edge_list = []
     cutoff_edge_types = []
     for (u, v), type in zip(edge_list, edge_types):
         if u < max_nodes_per_graph and v < max_nodes_per_graph:
             cutoff_edge_list.append((u, v))
             cutoff_edge_types.append(type)
-    # Cutoff features
     cutoff_features = {}
     for node_type, g_features in features.items():
         n_nodes_this_type = cutoff_node_types.count(db_info['node_type_to_int'][node_type])
@@ -110,11 +105,10 @@ def nan_initializer(shape, dtype, ctx, id_range):
 def get_DGL_collator(feature_encoders, db_info, max_nodes_per_graph=False, device='cpu'):
     """
     Args:
-        device: 图对象创建的设备，'cpu' 或 'cuda'。如果指定为 'cuda'，图将直接在 GPU 上创建，避免 CPU->GPU 传输。
+        device: device for graph creation, 'cpu' or 'cuda'. If 'cuda', graphs are created
+            directly on GPU to avoid CPU->GPU transfer.
     """
     def DGL_collator(datapoints):
-        # Concatenate all the datapoints together
-        # t = time.perf_counter()
         dgl_graphs = []
         b_dp_ids = []
         b_node_types = []
@@ -124,12 +118,9 @@ def get_DGL_collator(feature_encoders, db_info, max_nodes_per_graph=False, devic
         main_node_ids = []
 
         for dp_id, (edge_list, node_types, edge_types, features, label) in datapoints:
-            # print(dp_id, len(node_types), len(edge_types))
             b_dp_ids.append(dp_id)
 
-            # Truncate enormous graphs if necessary
             if max_nodes_per_graph and len(node_types) > max_nodes_per_graph:
-                # print(f'Cutting off graph {dp_id}')
                 edge_list, node_types, edge_types, features = truncate_graph(db_info, max_nodes_per_graph, edge_list,
                                                                              node_types, edge_types, features)
 
@@ -141,20 +132,16 @@ def get_DGL_collator(feature_encoders, db_info, max_nodes_per_graph=False, devic
             edge_list += [(i, i) for i in range(len(node_types))]
             edge_types += [0] * len(node_types)
 
-            # DGL 0.9.1: 使用dgl.graph()代替DGLGraph(graph_data=...)
-            # 如果指定了 device，直接在 GPU 上创建图，避免后续传输
             if device != 'cpu' and torch.cuda.is_available():
-                # 将边列表转换为 GPU tensor
                 if len(edge_list) > 0:
                     src = torch.tensor([e[0] for e in edge_list], dtype=torch.int64, device=device)
                     dst = torch.tensor([e[1] for e in edge_list], dtype=torch.int64, device=device)
                     graph = dgl.graph((src, dst))
                 else:
-                    # 空图，在 CPU 上创建然后迁移
                     graph = dgl.graph(edge_list)
                     graph = graph.to(device)
             else:
-            graph = dgl.graph(edge_list)
+                graph = dgl.graph(edge_list)
             dgl_graphs.append(graph)
 
             b_node_types.append(node_types)
@@ -170,41 +157,35 @@ def get_DGL_collator(feature_encoders, db_info, max_nodes_per_graph=False, devic
                     for feature_name, feature_values in g_features.items():
                         b_features[node_type][feature_name] += feature_values
 
-            # 如果label是tensor，提取其值
             if isinstance(label, torch.Tensor):
-                if label.dim() == 0:  # 标量tensor
+                if label.dim() == 0:
                     labels.append(label.item())
                 else:
                     labels.append(label)
             else:
-            labels.append(label)
+                labels.append(label)
 
         b_dgl = dgl.batch(dgl_graphs)
         b_dgl.set_n_initializer(nan_initializer)
         b_dgl.set_e_initializer(nan_initializer)
-        # 如果图在 GPU 上，node_types 和 edge_types 也应该在 GPU 上
         if device != 'cpu' and torch.cuda.is_available():
             b_node_types = torch.LongTensor(np.concatenate(b_node_types)).to(device)
             b_edge_types = torch.LongTensor(np.concatenate(b_edge_types)).to(device)
         else:
-        b_node_types = torch.LongTensor(np.concatenate(b_node_types))
-        b_edge_types = torch.LongTensor(np.concatenate(b_edge_types))
+            b_node_types = torch.LongTensor(np.concatenate(b_node_types))
+            b_edge_types = torch.LongTensor(np.concatenate(b_edge_types))
         b_dgl.dp_ids = b_dp_ids
         b_dgl.ndata['node_types'] = b_node_types
         b_dgl.edata['edge_types'] = b_edge_types
-        # print('build DGLGraphs: {}'.format(time.perf_counter() - t))
 
         # Encode the batch features into Tensors from their database values
-        # t = time.perf_counter()
         missing_node_types = []
         for node_type, features in b_features.items():
             cat_features = []
             cont_features = []
             for feature_name, feature_values in features.items():
-                #if 'FZ' not in feature_name:
-                #    continue
                 encoder = feature_encoders[node_type][feature_name]
-                if not feature_values:  # In case there are no nodes of this type in the batch
+                if not feature_values:
                     assert all(f == [] for f in features.values())
                     missing_node_types.append(node_type)
                     break
@@ -218,14 +199,12 @@ def get_DGL_collator(feature_encoders, db_info, max_nodes_per_graph=False, devic
                         cont_features.append(cont_feats)
             if cat_features:
                 cat_data = torch.cat(cat_features, dim=1)
-                # 如果图在 GPU 上，特征也应该在 GPU 上
                 if device != 'cpu' and torch.cuda.is_available():
                     cat_data = cat_data.to(device)
             else:
                 cat_data = []
             if cont_features:
                 cont_data = torch.cat(cont_features, dim=1)
-                # 如果图在 GPU 上，特征也应该在 GPU 上
                 if device != 'cpu' and torch.cuda.is_available():
                     cont_data = cont_data.to(device)
             else:
@@ -236,23 +215,18 @@ def get_DGL_collator(feature_encoders, db_info, max_nodes_per_graph=False, devic
 
         # Collate label
         try:
-            # 检查任务类型：如果是回归任务，使用FloatTensor；否则使用LongTensor
             task_type = db_info.get('task', {}).get('type', 'classification')
             if task_type == 'regression':
-                # 回归任务：labels应该是float值
                 b_label = torch.FloatTensor(labels)
             else:
-                # 分类任务：labels应该是long值
                 b_label = torch.LongTensor(labels)
-        except (TypeError, ValueError):  # This batch is from the test set or wrong type
-            # 尝试推断类型
+        except (TypeError, ValueError):
             if labels and isinstance(labels[0], (float, np.floating)):
                 b_label = torch.FloatTensor(labels)
             elif labels and isinstance(labels[0], (int, np.integer)):
-            b_label = torch.LongTensor(labels)
+                b_label = torch.LongTensor(labels)
             else:
-            b_label = None
-        # print('encode features and label: {}'.format(time.perf_counter() - t))
+                b_label = None
 
         return (b_dgl, b_features, main_node_ids), b_label
 
@@ -260,7 +234,6 @@ def get_DGL_collator(feature_encoders, db_info, max_nodes_per_graph=False, devic
 
 
 def get_train_test_dp_ids(dataset_name):
-    # db_name = None
     db_name = dataset_name
     if db_name is not None:
         db_info = get_db_info(db_name)
@@ -275,7 +248,7 @@ def get_train_test_dp_ids(dataset_name):
     return train_dp_ids, test_dp_ids
 
 
-def get_train_val_test_datasets(dataset_name, train_test_split, encoders, 
+def get_train_val_test_datasets(dataset_name, train_test_split, encoders,
                                 train_fraction_to_use=1.0):
     assert train_test_split in ['use_full_train', 'xval0', 'xval1', 'xval2', 'xval3', 'xval4']
     train_dp_ids, test_dp_ids = get_train_test_dp_ids(dataset_name)
@@ -290,17 +263,16 @@ def get_train_val_test_datasets(dataset_name, train_test_split, encoders,
     if train_fraction_to_use != 1.0:
         assert 0.0 < train_fraction_to_use < 1.0
         train_dp_ids = train_dp_ids[:ceil(train_fraction_to_use * len(train_dp_ids))]
-   
+
     train_dataset = DatabaseDataset(dataset_name, train_dp_ids, encoders)
     val_dataset = DatabaseDataset(dataset_name, val_dp_ids, encoders)
     test_dataset = DatabaseDataset(dataset_name, test_dp_ids, encoders)
-    
+
     return train_dataset, val_dataset, test_dataset
 
 
 def get_optim_with_correct_wd(optimizer_class_name, model, optimizer_kwargs,
                               wd_bias=False, wd_embed=False, wd_bn=False):
-    # In general, it may not be good to have weight_decay on bias terms, embeddings, or batch norm parameters
     if 'weight_decay' in optimizer_kwargs:
         no_wd_params = []
         wd_params = []
@@ -376,7 +348,6 @@ class DummyWriter:
 
     def add_scalar(self, tag_name, object, iter_number, *args, **kwargs):
         if tag_name == 'Train Loss/Train Loss':
-            # For testing purposes
             self.train_loss = object
             print('Train Loss step {} = {}'.format(iter_number, object))
         else:
@@ -398,6 +369,4 @@ def profiled():
     s = io.StringIO()
     ps = pstats.Stats(pr, stream=s).sort_stats('cumulative')
     ps.print_stats()
-    # uncomment this to see who's calling what
-    # ps.print_callers()
     print(s.getvalue())
