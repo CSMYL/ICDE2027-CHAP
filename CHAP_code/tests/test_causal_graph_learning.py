@@ -1,10 +1,3 @@
-"""
-Causal Graph Learning Evaluation Script
-
-This script evaluates causal graph learning performance on synthetic numerical DAG datasets.
-It supports both CHAP and CASTLE models for causal discovery tasks.
-"""
-
 import torch
 import sys
 import os

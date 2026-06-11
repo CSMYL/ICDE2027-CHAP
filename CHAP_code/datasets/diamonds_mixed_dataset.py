@@ -2,8 +2,13 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from datasets import IndexedReconstructDataset
 import numpy as np
+import os
 
-def load_diamonds_mixed_reconstruct_dataset(csv_path='../raw_data/diamonds_mixed.csv'):
+def load_diamonds_mixed_reconstruct_dataset(csv_path=None):
+    if csv_path is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        csv_path = os.path.join(project_root, 'raw_data', 'diamonds_mixed.csv')
     """
     加载 diamonds_mixed 数据集，2/3/4列为分类，其余为连续，最后一列为回归目标。
     返回：dataset, v, num_classes_dict

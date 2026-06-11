@@ -1,19 +1,3 @@
-"""
-TabGNN Data Preprocessing: Generate dataset configuration for CHAP datasets.
-
-TabGNN uses a multiplex graph structure where:
-1. Each sample is a node in the graph
-2. Categorical features are used as "connect keys" to build edges
-3. Data configuration is stored in tabular_ds_info.json + ds_info.json per dataset
-
-This script reads CHAP's raw_data CSV files and generates the ds_info.json files
-with column metadata (name, type, cardinality). The main tabular_ds_info.json has
-already been pre-configured to point to ../../raw_data/{dataset}.csv.
-
-Usage (from CHAP_code/):
-    python baseline/tabgnn/preprocess_data.py
-"""
-
 import os
 import sys
 import json

@@ -1,15 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-基于 Diamonds OOD shift1/shift2/shift3 的 Causal Attention 实验脚本。
-
-与原始 `test_causal_attention_msk_model.py` 的主要区别：
-- 不再在代码里按 8:2 重新划分数据集；
-- 而是尊重我们事先构造好的 OOD 划分：
-  - 对于 shiftX：前 N_train 行来自 train_expX（OOD Train），后 N_test 行来自 test_expX（OOD Test）
-- 仍然会从 OOD Train 部分再切一块出来作为 Val（例如 80/20 随机拆分），但不会动 OOD Test。
-"""
-
 import argparse
 import logging
 import os

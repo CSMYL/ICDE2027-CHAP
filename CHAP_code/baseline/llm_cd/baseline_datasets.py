@@ -1,7 +1,3 @@
-"""Baseline dataset loaders — thin wrappers around CHAP dataset loaders.
-
-Each loader returns (baseline_dataset, v, num_classes_dict, target_idx).
-"""
 import torch
 import sys
 import os

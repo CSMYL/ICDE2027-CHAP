@@ -1,23 +1,3 @@
-"""
-Orion-BiX baseline — follows the same data split & metrics pattern as other baselines.
-
-Orion-BiX is an in-context learning (ICL) foundation model for tabular data.
-It natively supports CLASSIFICATION only.
-
-For REGRESSION datasets, we use target discretization: the continuous target is binned
-into N quantile-based classes, OrionBixClassifier predicts bin probabilities, and
-continuous predictions are obtained via probability-weighted bin centers.
-
-Usage (from CHAP_code/):
-  cd baseline/orion_bix
-  python test_orion_bix_baseline.py --dataset creditcard
-  python test_orion_bix_baseline.py --dataset diamonds --n_bins 10
-
-Requirements:
-  pip install orion-bix
-  (First run will download ~800MB checkpoint from HuggingFace)
-"""
-
 import torch
 import numpy as np
 from sklearn.metrics import accuracy_score, roc_auc_score, mean_squared_error, r2_score

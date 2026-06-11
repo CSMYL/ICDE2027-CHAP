@@ -3,9 +3,14 @@ from sklearn.preprocessing import StandardScaler
 from utils.generate_DAG_data import load_and_parse_data
 from datasets import ReconstructDataset
 import numpy as np
+import os
 
 
-def load_synthetic_reconstruct_dataset(csv_path='../raw_data/synthetic_data.csv'):
+def load_synthetic_reconstruct_dataset(csv_path=None):
+    if csv_path is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        csv_path = os.path.join(project_root, 'raw_data', 'synthetic_data.csv')
     """
     加载 synthetic_data.csv，并构造 ReconstructDataset 和 v 向量。
 

@@ -5,13 +5,21 @@ from datasets import IndexedReconstructDataset
 import os
 from sklearn.preprocessing import StandardScaler
 
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(_CURRENT_DIR)
+_RAW_DATA_DIR = os.path.join(_PROJECT_ROOT, 'raw_data')
+
 def load_numerical_dag_reconstruct_dataset(
-    csv_path='raw_data/numerical_dag_data_5vars.csv',
-    adj_path='raw_data/numerical_dag_adj_5vars.npy',
+    csv_path=None,
+    adj_path=None,
     target_idx=None,
     standardize=True
 ):
     """Load numerical DAG dataset (all features continuous)."""
+    if csv_path is None:
+        csv_path = os.path.join(_RAW_DATA_DIR, 'numerical_dag_data_5vars.csv')
+    if adj_path is None:
+        adj_path = os.path.join(_RAW_DATA_DIR, 'numerical_dag_adj_5vars.npy')
     df = pd.read_csv(csv_path)
     feature_cols = [col for col in df.columns if col.startswith('X')]
     env_labels = df['env_label'].values if 'env_label' in df.columns else None
@@ -39,24 +47,24 @@ def load_numerical_dag_reconstruct_dataset(
 def load_numerical_dag_5vars_dataset(standardize=True):
     """Load 5-variable numerical DAG dataset."""
     return load_numerical_dag_reconstruct_dataset(
-        csv_path='raw_data/numerical_dag_data_5vars.csv',
-        adj_path='raw_data/numerical_dag_adj_5vars.npy',
+        csv_path=os.path.join(_RAW_DATA_DIR, 'numerical_dag_data_5vars.csv'),
+        adj_path=os.path.join(_RAW_DATA_DIR, 'numerical_dag_adj_5vars.npy'),
         standardize=standardize
     )
 
 def load_numerical_dag_10vars_dataset(standardize=True):
     """Load 10-variable numerical DAG dataset."""
     return load_numerical_dag_reconstruct_dataset(
-        csv_path='raw_data/numerical_dag_data_10vars.csv',
-        adj_path='raw_data/numerical_dag_adj_10vars.npy',
+        csv_path=os.path.join(_RAW_DATA_DIR, 'numerical_dag_data_10vars.csv'),
+        adj_path=os.path.join(_RAW_DATA_DIR, 'numerical_dag_adj_10vars.npy'),
         standardize=standardize
     )
 
 def load_numerical_dag_custom_dataset(num_vars=5, target_idx=None, standardize=True):
     """Load custom-size numerical DAG dataset."""
     return load_numerical_dag_reconstruct_dataset(
-        csv_path=f'raw_data/numerical_dag_data_{num_vars}vars.csv',
-        adj_path=f'raw_data/numerical_dag_adj_{num_vars}vars.npy',
+        csv_path=os.path.join(_RAW_DATA_DIR, f'numerical_dag_data_{num_vars}vars.csv'),
+        adj_path=os.path.join(_RAW_DATA_DIR, f'numerical_dag_adj_{num_vars}vars.npy'),
         target_idx=target_idx,
         standardize=standardize
     )

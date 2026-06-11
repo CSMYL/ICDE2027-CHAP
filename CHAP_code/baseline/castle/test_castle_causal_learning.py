@@ -1,5 +1,3 @@
-"""CASTLE causal graph learning evaluation (minimal, module-level doc)."""
-
 import numpy as np
 import pandas as pd
 import networkx as nx

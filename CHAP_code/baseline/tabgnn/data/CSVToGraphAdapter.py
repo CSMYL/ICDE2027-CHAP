@@ -1,16 +1,3 @@
-"""
-CSV to Graph Adapter - 完全按照TabGNN论文设计实现Multiplex Graph构建
-
-核心设计（来自TabGNN论文）：
-1. **每个样本对应一个Main_table节点**（不是特征作为节点）
-2. **基于样本之间的连接键（connect_key）构建多重图**：
-   - 相同连接键值的样本之间有边连接
-   - 不同的连接键对应不同的边类型（Multiplex Graph）
-3. **每个样本的图包含**：
-   - 中心节点（当前样本）
-   - 邻居节点（通过连接键找到的相关样本）
-   - 边：中心节点连接到邻居节点（不同的连接键=不同的边类型）
-"""
 import os
 import numpy as np
 import pandas as pd

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import os
 
 from datasets import IndexedReconstructDataset
 
@@ -45,22 +46,34 @@ def _load_shift_reconstruct_dataset(csv_path: str, shuffle: bool = True):
 
 
 def load_shift1_reconstruct_dataset(
-    csv_path: str = "../raw_data/diamonds_ood_experiments/shift1.csv",
+    csv_path: str = None,
 ):
     """加载 shift1 数据集（基于 Cut Shift OOD 实验拼接后的完整表）"""
+    if csv_path is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        csv_path = os.path.join(project_root, ‘raw_data’, ‘diamonds_ood_experiments’, ‘shift1.csv’)
     return _load_shift_reconstruct_dataset(csv_path)
 
 
 def load_shift2_reconstruct_dataset(
-    csv_path: str = "../raw_data/diamonds_ood_experiments/shift2.csv",
+    csv_path: str = None,
 ):
     """加载 shift2 数据集（基于 Color Shift OOD 实验拼接后的完整表）"""
+    if csv_path is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        csv_path = os.path.join(project_root, ‘raw_data’, ‘diamonds_ood_experiments’, ‘shift2.csv’)
     return _load_shift_reconstruct_dataset(csv_path)
 
 
 def load_shift3_reconstruct_dataset(
-    csv_path: str = "../raw_data/diamonds_ood_experiments/shift3.csv",
+    csv_path: str = None,
 ):
     """加载 shift3 数据集（基于 Simpson’s Paradox OOD 实验拼接后的完整表）"""
+    if csv_path is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        csv_path = os.path.join(project_root, ‘raw_data’, ‘diamonds_ood_experiments’, ‘shift3.csv’)
     return _load_shift_reconstruct_dataset(csv_path)
 

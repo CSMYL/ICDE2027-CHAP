@@ -2,9 +2,10 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from datasets import IndexedReconstructDataset
 import numpy as np
+import os
 
 
-def load_cardio_reconstruct_dataset(csv_path='raw_data/cardio.csv'):
+def load_cardio_reconstruct_dataset(csv_path=None):
     """
     Load cardio dataset and construct IndexedReconstructDataset and v vector.
     Cardio dataset has 12 features:
@@ -15,6 +16,10 @@ def load_cardio_reconstruct_dataset(csv_path='raw_data/cardio.csv'):
         v: np.ndarray, vector of length F, 0 for continuous features, 1 for categorical features
         num_classes_dict: dict, keys are categorical feature indices, values are number of classes
     """
+    if csv_path is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+        csv_path = os.path.join(project_root, 'raw_data', 'cardio.csv')
     df = pd.read_csv(csv_path, header=None)
     
     num_features = len(df.columns)

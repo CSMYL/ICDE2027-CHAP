@@ -1,16 +1,3 @@
-"""
-End-to-end Learning Experiment: Compare CHAP (joint learning) vs NOTEARS + CHAP (two-stage).
-
-Section 5.5 of the paper: run NOTEARS on Adult/Diamonds data to discover a causal graph,
-binarize it, use as fixed causal mask in CHAP's architecture, and compare prediction
-performance against full CHAP which learns the mask jointly.
-
-Usage (from CHAP_code/):
-    cd baseline/notears
-    python test_end_to_end.py --dataset adult
-    python test_end_to_end.py --dataset diamonds
-"""
-
 import os
 import sys
 import argparse

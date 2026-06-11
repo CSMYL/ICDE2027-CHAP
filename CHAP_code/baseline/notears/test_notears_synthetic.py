@@ -1,18 +1,3 @@
-"""
-NOTEARS baseline on synthetic DAG data — evaluates causal graph discovery (TPR, FPR).
-
-NOTEARS (Zheng et al., 2018) is a gradient-based causal discovery method that solves:
-    min_W  ||X - XW||^2 + λ||W||_1   s.t.  tr(e^{W⊙W}) - d = 0
-
-Usage (from CHAP_code/):
-    cd baseline/notears
-    python test_notears_synthetic.py --dataset numerical_5vars
-    python test_notears_synthetic.py --dataset numerical_10vars --nonlinear
-
-Requirements:
-    pip install causal-learn
-"""
-
 import os
 import sys
 import argparse

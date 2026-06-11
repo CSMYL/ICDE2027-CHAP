@@ -1,16 +1,3 @@
-"""
-ATT-Reg Data Preprocessing: Convert CSV datasets to LibSVM format.
-
-ATT-Reg (train_attreg.py) uses LibSVM format:
-    label 0:value 1:value 2:value ...
-
-Usage (from CHAP_code/):
-    python baseline/att_reg/preprocess_data.py
-
-This reads all 8 datasets from raw_data/*.csv and writes LibSVM files to
-baseline/att_reg/data/{dataset}/.
-"""
-
 import os
 import sys
 import pandas as pd

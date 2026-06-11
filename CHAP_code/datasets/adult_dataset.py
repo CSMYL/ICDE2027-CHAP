@@ -2,9 +2,14 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from datasets import IndexedReconstructDataset
 import numpy as np
+import os
 
 
-def load_adult_reconstruct_dataset(csv_path='../raw_data/adult.csv'):
+def load_adult_reconstruct_dataset(csv_path=None):
+    if csv_path is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        csv_path = os.path.join(project_root, 'raw_data', 'adult.csv')
     # Read data (no column names)
     df = pd.read_csv(csv_path, header=None)
     

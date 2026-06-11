@@ -1,25 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-为TabGNN创建db_info_fz.json文件
-"""
-
 import pandas as pd
 import json
 import os
 import numpy as np
 
+# Paths: use centralized raw_data/ at project root
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(_CURRENT_DIR))
+_RAW_DATA_DIR = os.path.join(_PROJECT_ROOT, 'raw_data')
+
 # 数据集配置
 DATASETS = {
     'crime': {
         'ds_info_path': 'data/test_data/crime.ds_info.json',
-        'data_path': 'data/raw_data/crime.csv',
+        'data_path': os.path.join(_RAW_DATA_DIR, 'crime.csv'),
         'task_type': 'regression',
         'n_classes': 1
     },
     'meps': {
         'ds_info_path': 'data/test_data/meps.ds_info.json',
-        'data_path': 'data/raw_data/meps.csv',
+        'data_path': os.path.join(_RAW_DATA_DIR, 'meps.csv'),
         'task_type': 'regression',
         'n_classes': 1
     }

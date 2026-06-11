@@ -1,22 +1,4 @@
 #!/usr/bin/env python
-"""
-通用训练脚本 - 支持GNN模型训练CSV数据
-
-数据集格式：
-- CSV文件：最后一列为标签（TARGET），其他列为特征
-- ds_info.json文件：包含数据集元信息（任务类型、列定义等）
-  示例：
-  {
-    "task": "binary classification" 或 "regression",
-    "columns": [
-      {"name": "feature0", "type": "NUMERIC"},
-      {"name": "TARGET", "type": "CATEGORICAL", "cardinality": 2}
-    ]
-  }
-
-使用方法：
-python train.py --dataset adult --epochs 10 --batch_size 32 --hidden_dim 64
-"""
 import os
 import sys
 import argparse

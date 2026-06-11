@@ -1,11 +1,3 @@
-"""Prompt builders for the LLM-CD baseline.
-
-The prompts follow the official LLM-CD implementation style: the LLM is used as
-an expert judge for uncertain conditional independence tests and edge
-orientation/refinement, not as a full graph generator.
-"""
-
-
 def _format_variable_descriptions(feature_names, feature_descriptions, indices):
     lines = []
     for idx in indices:

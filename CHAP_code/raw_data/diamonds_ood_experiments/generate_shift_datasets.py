@@ -1,14 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-将 OOD 分布偏移实验 (Exp1/2/3) 的 train/test 各自拼接成一个完整数据集，
-对连续特征做标准化（按 train 统计量），分类特征保持不变。
-
-输出：
-- shift1.csv, shift2.csv, shift3.csv
-- shifts_summary.md: 记录每个 shift 的 train/test 样本数及比例
-"""
-
 from __future__ import annotations
 
 import os

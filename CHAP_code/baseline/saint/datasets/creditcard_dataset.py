@@ -2,9 +2,10 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from datasets import IndexedReconstructDataset
 import numpy as np
+import os
 
 
-def load_creditcard_reconstruct_dataset(csv_path='raw_data/creditcard.csv'):
+def load_creditcard_reconstruct_dataset(csv_path=None):
     """
     Load creditcard dataset and construct IndexedReconstructDataset and v vector.
     Credit card dataset has 31 features:
@@ -16,6 +17,10 @@ def load_creditcard_reconstruct_dataset(csv_path='raw_data/creditcard.csv'):
         v: np.ndarray, vector of length F, 0 for continuous features, 1 for categorical features
         num_classes_dict: dict, keys are categorical feature indices, values are number of classes
     """
+    if csv_path is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+        csv_path = os.path.join(project_root, 'raw_data', 'creditcard.csv')
     df = pd.read_csv(csv_path)
     
     num_features = len(df.columns)

@@ -1,10 +1,3 @@
-"""LLM-CD style baseline for CHAP datasets.
-
-This module keeps the original LLM-CD spirit while fitting the CHAP codebase:
-PC provides a data-driven graph, the LLM only judges uncertain/refinement cases,
-and the final predictor uses direct parents of the target node.
-"""
-
 from __future__ import annotations
 
 import argparse

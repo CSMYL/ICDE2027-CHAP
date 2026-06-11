@@ -1,14 +1,3 @@
-"""
-TabM baseline — follows the same data split & metrics pattern as other baselines.
-
-Usage (from CHAP_code/):
-  cd baseline/tabm
-  python test_tabm_baseline.py --dataset creditcard --lr 2e-3 --epochs 30
-
-Requirements:
-  pip install tabm rtdl_num_embeddings
-"""
-
 import torch
 import torch.nn as nn
 import torch.optim as optim

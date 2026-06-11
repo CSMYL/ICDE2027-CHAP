@@ -2,8 +2,13 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from datasets import IndexedReconstructDataset
 import numpy as np
+import os
 
-def load_housing_reconstruct_dataset(csv_path='../raw_data/housing.csv'):
+def load_housing_reconstruct_dataset(csv_path=None):
+    if csv_path is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        csv_path = os.path.join(project_root, 'raw_data', 'housing.csv')
     """
     加载 housing 数据集，除area列外全为分类，第5列area按每50一档离散化，最后一列为回归目标。
     返回：dataset, v, num_classes_dict

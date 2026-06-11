@@ -2,12 +2,17 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from datasets import IndexedReconstructDataset
 import numpy as np
+import os
 
-def load_housesale_reconstruct_dataset(csv_path='raw_data/housesale.csv'):
+def load_housesale_reconstruct_dataset(csv_path=None):
     """
     Load housesale dataset. All columns except the last are categorical features, the last column is a regression target.
     Returns: dataset, v, num_classes_dict
     """
+    if csv_path is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+        csv_path = os.path.join(project_root, 'raw_data', 'housesale.csv')
     df = pd.read_csv(csv_path, header=0)
     df = df.sample(frac=1, random_state=42).reset_index(drop=True)
     num_features = len(df.columns)

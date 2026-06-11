@@ -1,26 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-为TabGNN准备crime和meps数据集
-"""
-
 import pandas as pd
 import json
 import os
 import numpy as np
 
+# Paths: use centralized raw_data/ at project root
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(_CURRENT_DIR))
+_RAW_DATA_DIR = os.path.join(_PROJECT_ROOT, 'raw_data')
+
 # 数据集配置
 DATASETS = {
     'crime': {
-        'source': '/data/ruipeng/marunlin/crime_dataset/crime.csv',
-        'target_dir': '/data/ruipeng/marunlin/TabGNN',
+        'source': os.path.join(_RAW_DATA_DIR, 'crime.csv'),
+        'target_dir': os.path.dirname(os.path.abspath(__file__)),
         'task': 'regression',
         'continuous_count': 119,  # 前119个是连续特征
         'categorical_count': 3    # 后3个是分类特征
     },
     'meps': {
-        'source': '/data/ruipeng/marunlin/meps_dataset/meps.csv',
-        'target_dir': '/data/ruipeng/marunlin/TabGNN',
+        'source': os.path.join(_RAW_DATA_DIR, 'meps.csv'),
+        'target_dir': os.path.dirname(os.path.abspath(__file__)),
         'task': 'regression',
         'continuous_features': ['AGE', 'PCS42', 'MCS42', 'K6SUM42']  # 这4个是连续特征
     }

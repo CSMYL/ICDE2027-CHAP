@@ -51,7 +51,7 @@ Causal_attention/
 │   ├── baseline_datasets.py
 │   ├── train_baseline_utils.py
 │   ├── xgboost/ #XGBoost baseline
-│   │   └── xgboost.py
+│   │   └── run_xgboost.py
 │   ├── automl/ #AutoML baselines (AutoGluon and AutoSklearn)
 │   │   ├── test_automl_classification.py
 │   │   ├── test_automl_regression.py
@@ -227,7 +227,7 @@ Before running experiments, please prepare the datasets as follows:
 * **baselines:**
   * **XGBoost**
     * cd baseline/xgboost
-    * python xgboost.py --dataset Diamonds --n_folds 5 --random_state 42 --test_size 0.2
+    * python run_xgboost.py --dataset Diamonds --n_folds 5 --random_state 42 --test_size 0.2
   * **AutoML**
     * cd baseline/automl
     * python test_automl_classification.py --dataset creditcard --time_limit 480
@@ -258,11 +258,11 @@ Before running experiments, please prepare the datasets as follows:
     * python train.py --dataset adult --epochs 10 --batch_size 32
   * **CASTLE**
     * cd baseline/castle
-    * python main_cf.py   --csv creditcard.csv  --n_folds 5   --reg_lambda 1.0   --reg_beta 5.0  --extension creditcard
-    * python main.py   --csv diamonds.csv  --n_folds 5   --reg_lambda 1.0   --reg_beta 5.0  --extension diamonds
+    * python main_cf.py --csv ../raw_data/creditcard.csv --n_folds 5 --reg_lambda 1.0 --reg_beta 5.0 --extension creditcard
+    * python main.py --csv ../raw_data/diamonds.csv --n_folds 5 --reg_lambda 1.0 --reg_beta 5.0 --extension diamonds
   * **LogCause**
     * cd baseline
-    * python test_linear_baseline.py --dataset creditcard --learning_rate 0.0001
+    * python test_linear_baseline.py --dataset creditcard --lr 0.0001
   * **LLM-CD**
     * cd baseline/llm_cd
     * Without LLM: python test_llm_cd_baseline.py --dataset creditcard --sample_size 200 --predictor rf

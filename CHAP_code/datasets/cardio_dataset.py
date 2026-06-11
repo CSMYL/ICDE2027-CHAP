@@ -2,9 +2,14 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from datasets import IndexedReconstructDataset
 import numpy as np
+import os
 
 
-def load_cardio_reconstruct_dataset(csv_path='../raw_data/cardio.csv'):
+def load_cardio_reconstruct_dataset(csv_path=None):
+    if csv_path is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        csv_path = os.path.join(project_root, 'raw_data', 'cardio.csv')
     # Read data (no column names)
     df = pd.read_csv(csv_path, header=None)
     

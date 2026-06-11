@@ -221,8 +221,11 @@ cd ..
 # XGBoost
 echo "Running XGBoost baseline..."
 cd xgboost
-# Note: XGBoost script runs pre-configured datasets, see xgboost.py for details
-python xgboost.py
+for dataset in "adult" "cardio" "creditcard" "diamonds" "elevator" "housesale" "crime" "meps"; do
+    echo "Running XGBoost on $dataset dataset..."
+    python run_xgboost.py --dataset $dataset --n_folds 5 --random_state 42 --test_size 0.2
+    echo ""
+done
 cd ..
 
 cd ..

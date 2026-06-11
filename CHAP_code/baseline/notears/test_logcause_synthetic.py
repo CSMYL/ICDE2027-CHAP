@@ -1,16 +1,3 @@
-"""
-LogCause baseline on synthetic DAG data — evaluates causal graph discovery (TPR, FPR, RMSE).
-
-LogCause uses a linear predictor with adaptive L1 regularization based on causal strengths.
-For synthetic evaluation, we extract the learned weights as an adjacency matrix and compare
-against ground truth.
-
-Usage (from CHAP_code/):
-    cd baseline/notears
-    python test_logcause_synthetic.py --dataset numerical_5vars
-    python test_logcause_synthetic.py --dataset numerical_10vars --nonlinear
-"""
-
 import os
 import sys
 import argparse
