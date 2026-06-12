@@ -18,8 +18,6 @@ from baseline.baseline_datasets import (
     load_adult_baseline_dataset,
     load_cardio_baseline_dataset,
     load_diamonds_baseline_dataset,
-    load_diamonds_mixed_baseline_dataset,
-    load_housing_baseline_dataset,
     load_elevator_baseline_dataset,
     load_housesale_baseline_dataset
 )
@@ -84,12 +82,6 @@ def test_ft_transformer_baseline(dataset="creditcard", d_token=64, n_heads=8, n_
     elif dataset.lower() == "diamonds":
         dataset_obj, v, num_classes_dict, target_idx = load_diamonds_baseline_dataset()
         dataset_name = "Diamonds"
-    elif dataset.lower() == "diamonds_mixed":
-        dataset_obj, v, num_classes_dict, target_idx = load_diamonds_mixed_baseline_dataset()
-        dataset_name = "DiamondsMixed"
-    elif dataset.lower() == "housing":
-        dataset_obj, v, num_classes_dict, target_idx = load_housing_baseline_dataset()
-        dataset_name = "Housing"
     elif dataset.lower() == "elevator":
         dataset_obj, v, num_classes_dict, target_idx = load_elevator_baseline_dataset()
         dataset_name = "Elevator"
@@ -256,7 +248,7 @@ def test_ft_transformer_baseline(dataset="creditcard", d_token=64, n_heads=8, n_
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='FT-Transformer Baseline')
     parser.add_argument('--dataset', type=str, default='housesale',
-                       choices=['creditcard', 'synthetic', 'adult', 'cardio', 'diamonds', 'diamonds_mixed', 'housing', 'elevator', 'housesale'],
+                       choices=['creditcard', 'synthetic', 'adult', 'cardio', 'diamonds', 'elevator', 'housesale', 'crime', 'meps'],
                        help='Dataset selection')
     parser.add_argument('--d_token', type=int, default=64, 
                        help='Token dimension/embedding dimension')

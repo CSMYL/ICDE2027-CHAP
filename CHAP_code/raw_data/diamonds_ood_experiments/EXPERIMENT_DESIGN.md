@@ -2,7 +2,7 @@
 
 ## Data Source & Encoding
 
-- Input: `diamonds_mixed.csv` (ordinal encoded per `diamonds_mapping.csv`)
+- Input: `diamonds.csv` (headerless; column names assigned by `generate_ood_splits.py`)
 - cut: Fair(0) < Good(1) < Very Good(2) < Premium(3) < Ideal(4)
 - color: J(0) < I(1) < H(2) < G(3) < F(4) < E(5) < D(6)
 - clarity: I1(0) < SI2(1) < SI1(2) < VS2(3) < VS1(4) < VVS2(5) < VVS1(6) < IF(7)

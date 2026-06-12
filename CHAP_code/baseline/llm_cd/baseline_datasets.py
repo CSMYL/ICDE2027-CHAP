@@ -11,8 +11,6 @@ from datasets.synthetic_dataset import load_synthetic_reconstruct_dataset
 from datasets.adult_dataset import load_adult_reconstruct_dataset
 from datasets.cardio_dataset import load_cardio_reconstruct_dataset
 from datasets.diamonds_dataset import load_diamonds_reconstruct_dataset
-from datasets.diamonds_mixed_dataset import load_diamonds_mixed_reconstruct_dataset
-from datasets.housing_dataset import load_housing_reconstruct_dataset
 from datasets.elevator_dataset import load_elevator_reconstruct_dataset
 from datasets.housesale_dataset import load_housesale_reconstruct_dataset
 from datasets.crime_dataset import load_crime_reconstruct_dataset
@@ -78,12 +76,6 @@ def load_diamonds_baseline_dataset():
     return _make_baseline_dataset(load_diamonds_reconstruct_dataset)
 
 
-def load_diamonds_mixed_baseline_dataset():
-    return _make_baseline_dataset(load_diamonds_mixed_reconstruct_dataset)
-
-
-def load_housing_baseline_dataset():
-    return _make_baseline_dataset(load_housing_reconstruct_dataset)
 
 
 def load_elevator_baseline_dataset():

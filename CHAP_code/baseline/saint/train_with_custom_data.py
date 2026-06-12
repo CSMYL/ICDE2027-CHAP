@@ -14,7 +14,7 @@ import time
 parser = argparse.ArgumentParser()
 
 # Data related arguments
-parser.add_argument('--dataset', default='housesale', type=str, choices=['adult', 'cardio', 'creditcard', 'diamonds', 'diamonds_mixed', 'housing', 'elevator', 'housesale'],
+parser.add_argument('--dataset', default='housesale', type=str, choices=['adult', 'cardio', 'creditcard', 'diamonds', 'elevator', 'housesale', 'crime', 'meps'],
                    help='Dataset name to use')
 parser.add_argument('--data_path', type=str, default=None, help='Optional custom path to CSV file')
 parser.add_argument('--target_col_idx', type=int, default=None, help='Target column index (default: last column)')

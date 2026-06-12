@@ -5,7 +5,9 @@ import numpy as np
 import pandas as pd
 
 
-INPUT_FILE = "diamonds_mixed.csv"
+INPUT_FILE = "diamonds.csv"
+# Note: diamonds.csv is headerless; column names are assigned below:
+COLUMN_NAMES = ["carat", "cut", "color", "clarity", "depth", "table", "x", "y", "z", "price"]
 OUTPUT_DIR = "diamonds_ood_experiments"
 RANDOM_SEED = 42
 
@@ -119,7 +121,7 @@ def main() -> None:
     print("=" * 80)
 
     print("\n[1] Loading data...")
-    df_raw = pd.read_csv(INPUT_FILE)
+    df_raw = pd.read_csv(INPUT_FILE, header=None, names=COLUMN_NAMES)
     print(f"Raw data: {len(df_raw)} rows, {df_raw.shape[1]} cols")
     print(f"Columns: {list(df_raw.columns)}")
 

@@ -32,10 +32,8 @@ from baseline.llm_cd.baseline_datasets import (
     load_creditcard_baseline_dataset,
     load_crime_baseline_dataset,
     load_diamonds_baseline_dataset,
-    load_diamonds_mixed_baseline_dataset,
     load_elevator_baseline_dataset,
     load_housesale_baseline_dataset,
-    load_housing_baseline_dataset,
     load_meps_baseline_dataset,
     load_synthetic_baseline_dataset,
 )
@@ -53,10 +51,8 @@ DATASET_LOADERS = {
     "creditcard": load_creditcard_baseline_dataset,
     "crime": load_crime_baseline_dataset,
     "diamonds": load_diamonds_baseline_dataset,
-    "diamonds_mixed": load_diamonds_mixed_baseline_dataset,
     "elevator": load_elevator_baseline_dataset,
     "housesale": load_housesale_baseline_dataset,
-    "housing": load_housing_baseline_dataset,
     "meps": load_meps_baseline_dataset,
     "synthetic": load_synthetic_baseline_dataset,
 }
@@ -137,7 +133,7 @@ def feature_metadata(dataset_name: str, n_features: int) -> Tuple[List[str], Dic
         }
         for name in names:
             descriptions.setdefault(name, f"An anonymized PCA transaction feature named {name}.")
-    elif dataset_name in {"diamonds", "diamonds_mixed"}:
+    elif dataset_name == "diamonds":
         names = ["carat", "cut", "color", "clarity", "depth", "table", "x", "y", "z", "price"][:n_features]
         descriptions = {
             "carat": "Diamond weight in carats.",
@@ -194,9 +190,6 @@ def feature_metadata(dataset_name: str, n_features: int) -> Tuple[List[str], Dic
     elif dataset_name == "synthetic":
         names = [f"Node_{i}" for i in range(n_features)]
         descriptions = {name: f"Synthetic DAG variable {name}." for name in names}
-    elif dataset_name == "housing":
-        names = _read_header("raw_data/housing.csv", n_features) or [f"feature_{i}" for i in range(n_features)]
-        descriptions = {name: f"Housing dataset variable: {name}." for name in names}
     elif dataset_name == "crime":
         names = _read_header("raw_data/crime.csv", n_features) or [f"feature_{i}" for i in range(n_features)]
         _crime_descriptions = {

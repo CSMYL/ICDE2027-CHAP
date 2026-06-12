@@ -294,22 +294,6 @@ def get_dataset_info(dataset_name):
             'task': 'regression',
             'default_target': 9  # Last column is target
         },
-        'diamonds_mixed': {
-            'description': 'Diamonds price prediction (mixed features)',
-            'features': 9,
-            'categorical': 3,
-            'continuous': 6,
-            'task': 'regression',
-            'default_target': 9  # Last column is target
-        },
-        'housing': {
-            'description': 'Housing price prediction (mostly categorical)',
-            'features': 9,
-            'categorical': 9,
-            'continuous': 0,
-            'task': 'regression',
-            'default_target': 9  # Last column is target
-        },
         'elevator': {
             'description': 'Elevator state regression (all continuous)',
             'features': 7,

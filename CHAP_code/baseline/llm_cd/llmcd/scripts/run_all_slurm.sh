@@ -21,10 +21,8 @@ DATASETS=(
   "creditcard"
   "crime"
   "diamonds"
-  "diamonds_mixed"
   "elevator"
   "housesale"
-  "housing"
   "meps"
 )
 

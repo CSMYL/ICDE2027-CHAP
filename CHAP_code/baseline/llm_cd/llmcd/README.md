@@ -279,10 +279,10 @@ Available dataset names:
 - `cardio`
 - `creditcard`
 - `diamonds`
-- `diamonds_mixed`
 - `elevator`
 - `housesale`
-- `housing`
+- `crime`
+- `meps`
 - `synthetic`
 
 For custom CSV, fill in `data`:

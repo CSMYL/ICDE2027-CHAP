@@ -18,8 +18,7 @@ Causal_attention/
 │   ├── causal_attention_msk_model.py #Main model
 │   ├── causal_attention_msk_model_add_mask_design.py #Additive mask design
 │   ├── causal_attention_msk_model_inner_softmax_mask_design.py #Softmax mask design
-│   ├── causal_attention_msk_model_nomsk_design.py #Parallel reconstruction design
-│   ├── causal_attention_msk_model_origin_part_efficient.py #Origin efficient variant
+│   ├── causal_attention_msk_model_parallel_recon_design.py #Parallel reconstruction design
 │   ├── causal_attention_msk_model_parents_predictor_design.py #Flattening design
 │   ├── causal_attention_msk_model_wo_mask_attention.py #Without causal mask
 │   ├── causal_attention_msk_model_wo_pred_weight.py #Without pred weight
@@ -37,8 +36,6 @@ Causal_attention/
 │   ├── tabular_datasets.py
 │   ├── ood_shift_datasets.py
 │   ├── numerical_dag_dataset.py #Numerical DAG dataset for synthetic experiments
-│   ├── diamonds_mixed_dataset.py
-│   ├── housing_dataset.py
 │   └── synthetic_dataset.py
 ├── utils/ #Training and evaluation functions
 │   ├── train_msk_utils.py
@@ -110,7 +107,6 @@ Causal_attention/
 │   ├── housesale.csv
 │   ├── crime.csv
 │   ├── meps.csv
-│   ├── diamonds_mixed.csv
 │   ├── diamonds_ood_experiments/
 │   ├── generate_ood_splits.py
 │   ├── numerical_dag_data_5vars.csv #Synthetic DAG data with 5 variables
@@ -258,8 +254,8 @@ Before running experiments, please prepare the datasets as follows:
     * python train.py --dataset adult --epochs 10 --batch_size 32
   * **CASTLE**
     * cd baseline/castle
-    * python main_cf.py --csv ../raw_data/creditcard.csv --n_folds 5 --reg_lambda 1.0 --reg_beta 5.0 --extension creditcard
-    * python main.py --csv ../raw_data/diamonds.csv --n_folds 5 --reg_lambda 1.0 --reg_beta 5.0 --extension diamonds
+    * python main_cf.py --csv ../../raw_data/creditcard.csv --n_folds 5 --reg_lambda 1.0 --reg_beta 5.0 --extension creditcard
+    * python main.py --csv ../../raw_data/diamonds.csv --n_folds 5 --reg_lambda 1.0 --reg_beta 5.0 --extension diamonds
   * **LogCause**
     * cd baseline
     * python test_linear_baseline.py --dataset creditcard --lr 0.0001
@@ -283,7 +279,7 @@ This script will sequentially run:
 2. Baseline experiments (XGBoost, AutoML, TabM, FT-Transformer, Tab-Transformer, SAINT, Orion-BiX, ATT-Reg, TabGNN, CASTLE, LogCause, LLM-CD)
 3. Synthetic data experiments (CHAP, CASTLE, NOTEARS, LogCause)
 4. End-to-end learning experiment (NOTEARS mask vs CHAP)
-5. Distribution shift experiments (Cut/Color/Simpson on Diamonds)
+5. Distribution shift experiments (feature-level shift and Simpson's Paradox on Diamonds)
 6. Design choices experiments
 7. Ablation study experiments
 
@@ -322,7 +318,7 @@ Compare two-stage (NOTEARS causal mask + CHAP predictor) vs end-to-end CHAP:
 
 ## Distribution Shift Experiments
 
-OOD robustness evaluation on Diamonds dataset：
+OOD robustness evaluation on Diamonds dataset, following the paper with two representative settings: a feature-level shift and a spurious-correlation reversal (Simpson's Paradox):
 
 * **Generate OOD splits**:
   ```bash
@@ -330,11 +326,19 @@ OOD robustness evaluation on Diamonds dataset：
   python generate_ood_splits.py
   ```
 
-* **Run shift experiments**:
+* **Feature-level shift** (Color feature: D/E/F in train, G/H/I/J in test):
   ```bash
   cd tests
   python test_causal_attention_msk_shift.py --dataset shift1
+  ```
+
+* **Simpson's Paradox shift** (spurious correlation reversal between Carat and Clarity):
+  ```bash
   python test_causal_attention_msk_shift.py --dataset shift2
+  ```
+
+* **Additional shift variant**:
+  ```bash
   python test_causal_attention_msk_shift.py --dataset shift3
   ```
 
@@ -344,32 +348,43 @@ OOD robustness evaluation on Diamonds dataset：
 
 ## Design Choices
 
-Experiments evaluating different design choices in CHAP:
+Experiments evaluating different design choices in CHAP, conducted on Adult and Diamonds datasets following the paper (substitute `--dataset` and `--prefix` with `adult` or `diamonds`):
 
-* **Add mask**
-  * python tests/test_causal_attention_msk_model.py --prefix creditcard --dataset creditcard --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_add_mask_design
-* **Softmax mask**
-  * python tests/test_causal_attention_msk_model.py --prefix creditcard --dataset creditcard --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_inner_softmax_mask_design
-* **Flattening**
-  * python tests/test_causal_attention_msk_model.py --prefix creditcard --dataset creditcard --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_parents_predictor_design
-* **Mean Pooling**
-  * python tests/test_causal_attention_msk_model.py --prefix creditcard --dataset creditcard --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_wo_pred_weight
-* **Parallel Reconstruction**
-  * python tests/test_causal_attention_msk_model.py --prefix creditcard --dataset creditcard --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_nomsk_design
+* **Add mask** (additive masking vs multiplicative)
+  * python tests/test_causal_attention_msk_model.py --prefix adult --dataset adult --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_add_mask_design
+  * python tests/test_causal_attention_msk_model.py --prefix diamonds --dataset diamonds --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_add_mask_design
+* **Softmax mask** (softmax-internal masking vs multiplicative)
+  * python tests/test_causal_attention_msk_model.py --prefix adult --dataset adult --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_inner_softmax_mask_design
+  * python tests/test_causal_attention_msk_model.py --prefix diamonds --dataset diamonds --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_inner_softmax_mask_design
+* **Flattening** (concatenation vs hierarchy-aware aggregation)
+  * python tests/test_causal_attention_msk_model.py --prefix adult --dataset adult --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_parents_predictor_design
+  * python tests/test_causal_attention_msk_model.py --prefix diamonds --dataset diamonds --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_parents_predictor_design
+* **Mean Pooling** (equal weights vs learnable prediction weights)
+  * python tests/test_causal_attention_msk_model.py --prefix adult --dataset adult --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_wo_pred_weight
+  * python tests/test_causal_attention_msk_model.py --prefix diamonds --dataset diamonds --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_wo_pred_weight
+* **Parallel Reconstruction** (parallel vs MSK-based reconstruction)
+  * python tests/test_causal_attention_msk_model.py --prefix adult --dataset adult --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_parallel_recon_design
+  * python tests/test_causal_attention_msk_model.py --prefix diamonds --dataset diamonds --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_parallel_recon_design
 
 ## Ablation Study
 
-Experiments removing individual components to evaluate their contributions:
+Experiments removing individual components to evaluate their contributions, conducted on Adult and Diamonds datasets following the paper (substitute `--dataset` and `--prefix` with `adult` or `diamonds`):
 
 * **w/o pred reg**
-  * python tests/test_causal_attention_msk_model.py --prefix creditcard --dataset creditcard --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_prediction_reg
+  * python tests/test_causal_attention_msk_model.py --prefix adult --dataset adult --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_prediction_reg
+  * python tests/test_causal_attention_msk_model.py --prefix diamonds --dataset diamonds --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_prediction_reg
 * **w/o DAG loss**
-  * python tests/test_causal_attention_msk_model.py --prefix creditcard --dataset creditcard --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_dag_loss
+  * python tests/test_causal_attention_msk_model.py --prefix adult --dataset adult --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_dag_loss
+  * python tests/test_causal_attention_msk_model.py --prefix diamonds --dataset diamonds --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_dag_loss
 * **w/o sparse loss**
-  * python tests/test_causal_attention_msk_model.py --prefix creditcard --dataset creditcard --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_sparse_loss
+  * python tests/test_causal_attention_msk_model.py --prefix adult --dataset adult --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_sparse_loss
+  * python tests/test_causal_attention_msk_model.py --prefix diamonds --dataset diamonds --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_sparse_loss
 * **w/o reconstruction loss**
-  * python tests/test_causal_attention_msk_model.py --prefix creditcard --dataset creditcard --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_reconstruction_loss
+  * python tests/test_causal_attention_msk_model.py --prefix adult --dataset adult --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_reconstruction_loss
+  * python tests/test_causal_attention_msk_model.py --prefix diamonds --dataset diamonds --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model --train_source utils.train_msk_utils_wo_reconstruction_loss
 * **w/o pred weight**
-  * python tests/test_causal_attention_msk_model.py --prefix creditcard --dataset creditcard --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_wo_pred_weight
+  * python tests/test_causal_attention_msk_model.py --prefix adult --dataset adult --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_wo_pred_weight
+  * python tests/test_causal_attention_msk_model.py --prefix diamonds --dataset diamonds --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_wo_pred_weight
 * **w/o causal mask**
-  * python tests/test_causal_attention_msk_model.py --prefix creditcard --dataset creditcard --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_wo_mask_attention
+  * python tests/test_causal_attention_msk_model.py --prefix adult --dataset adult --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_wo_mask_attention
+  * python tests/test_causal_attention_msk_model.py --prefix diamonds --dataset diamonds --num_heads 4 --num_layers 1 --gpu_id 0 --patience 50 --d_model 32 --learning_rate 0.0001 --model_source models.causal_attention_msk_model_wo_mask_attention

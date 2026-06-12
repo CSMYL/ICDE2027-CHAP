@@ -495,7 +495,7 @@ if __name__ == "__main__":
                        help='Prefix for result files to distinguish different experiments (default: no prefix)')
     parser.add_argument('--dataset', type=str, default='housesale',
                        choices=['creditcard', 'adult', 'cardio', 'diamonds', 'elevator', 'housesale', 'crime', 'meps'],
-                       help='Choose dataset: creditcard, synthetic, adult, cardio, diamonds, diamonds_mixed, housing, elevator, housesale (default: diamonds)')
+                       help='Choose dataset: creditcard, synthetic, adult, cardio, diamonds, elevator, housesale, crime, meps (default: diamonds)')
     parser.add_argument('--gpu_id', type=int, default=-1, 
                        help='Specify GPU ID, -1 for default GPU, -2 for forcing CPU (default: -1)')
     
